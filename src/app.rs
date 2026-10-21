@@ -9,8 +9,7 @@ use egui::{Align2, Color32, RichText};
 
 pub struct AtelierApp {
     pub st: AtelierState,
-    raster: ui::canvas::RasterCache,
-    last_canvas_size: egui::Vec2,
+    engine: ui::canvas::CanvasEngine,
 }
 
 impl AtelierApp {
@@ -19,8 +18,7 @@ impl AtelierApp {
         apply_theme(&cc.egui_ctx, theme_by_id(st.theme_id));
         Self {
             st,
-            raster: ui::canvas::RasterCache::default(),
-            last_canvas_size: egui::vec2(1200.0, 800.0),
+            engine: ui::canvas::CanvasEngine::new(),
         }
     }
 
@@ -53,9 +51,10 @@ impl AtelierApp {
             "edit-deselect" => st.deselect_all(),
             "edit-delete" => st.delete_selected(),
             "edit-shortcuts" => st.active_modal = Some(Modal::Shortcuts),
-            "edit-cut" | "edit-copy" | "edit-paste" | "edit-transform" => {
-                st.hint("Clipboard ops arrive with the compositor pass")
-            }
+            "edit-cut" => st.copy_selection(true),
+            "edit-copy" => st.copy_selection(false),
+            "edit-paste" => st.paste_clipboard(),
+            "edit-transform" => st.hint("Free Transform arrives with the compositor pass"),
             // Object / Layer
             "object-group" => st.group_selected(),
             "object-ungroup" => st.ungroup_selected(),
@@ -78,10 +77,7 @@ impl AtelierApp {
             // View
             "view-zoomin" => st.zoom = (st.zoom * 1.25).min(32.0),
             "view-zoomout" => st.zoom = (st.zoom / 1.25).max(0.02),
-            "view-fit" => {
-                let (w, h) = (self.last_canvas_size.x, self.last_canvas_size.y);
-                st.fit_to_screen(w, h);
-            }
+            "view-fit" => st.fit(),
             "view-actual" => st.reset_viewport(),
             "view-rulers" => st.show_rulers = !st.show_rulers,
             "view-guides" => st.show_guides = !st.show_guides,
@@ -127,6 +123,43 @@ impl eframe::App for AtelierApp {
             for id in hits {
                 self.dispatch_shortcut(&id);
             }
+            // Escape: cancel pen path or clear selection.
+            if ctx.input(|i| i.key_pressed(egui::Key::Escape)) {
+                if !self.st.pen_path.is_empty() {
+                    self.st.pen_path.clear();
+                    self.st.hint("Pen path cancelled");
+                } else if self.st.selection.is_some() {
+                    self.st.selection = None;
+                    self.st.hint("Selection cleared");
+                } else {
+                    self.st.deselect_all();
+                }
+            }
+            // Enter: commit pen path.
+            if self.st.persona == Persona::Vector
+                && !self.st.pen_path.is_empty()
+                && ctx.input(|i| i.key_pressed(egui::Key::Enter))
+            {
+                self.st.commit_pen_path(true);
+            }
+            // Arrow keys nudge selection.
+            let nudge = ctx.input(|i| {
+                let step = if i.modifiers.shift { 10.0 } else { 1.0 };
+                if i.key_pressed(egui::Key::ArrowLeft) {
+                    Some((-step, 0.0))
+                } else if i.key_pressed(egui::Key::ArrowRight) {
+                    Some((step, 0.0))
+                } else if i.key_pressed(egui::Key::ArrowUp) {
+                    Some((0.0, -step))
+                } else if i.key_pressed(egui::Key::ArrowDown) {
+                    Some((0.0, step))
+                } else {
+                    None
+                }
+            });
+            if let Some((dx, dy)) = nudge {
+                self.st.nudge_selected(dx, dy);
+            }
         }
 
         // Top bars.
@@ -153,8 +186,7 @@ impl eframe::App for AtelierApp {
 
         // Canvas.
         egui::CentralPanel::default().show(ctx, |ui| {
-            self.last_canvas_size = ui.available_size();
-            ui::canvas::canvas(ui, &mut self.st, &mut self.raster);
+            ui::canvas::canvas(ui, &mut self.st, &mut self.engine);
         });
 
         // Modals.

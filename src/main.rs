@@ -2,6 +2,7 @@ mod app;
 mod io;
 mod model;
 mod presets;
+mod raster;
 mod shortcuts;
 mod state;
 mod theme;

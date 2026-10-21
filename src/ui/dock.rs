@@ -283,24 +283,84 @@ fn swatches_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
     let theme = *theme_by_id(st.theme_id);
     let muted = hex32(theme.text_muted);
 
-    let mut palette_idx = 0usize;
-    egui::ComboBox::from_id_salt("palette")
-        .selected_text(st.palettes.first().map(|p| p.name.clone()).unwrap_or_default())
-        .show_ui(ui, |ui| {
-            for (i, p) in st.palettes.iter().enumerate() {
-                ui.selectable_value(&mut palette_idx, i, &p.name);
+    if !st.palettes.iter().any(|p| p.id == st.selected_palette_id) {
+        st.selected_palette_id =
+            st.palettes.first().map(|p| p.id.clone()).unwrap_or_default();
+    }
+
+    ui.horizontal(|ui| {
+        egui::ComboBox::from_id_salt("palette")
+            .selected_text(
+                st.palettes
+                    .iter()
+                    .find(|p| p.id == st.selected_palette_id)
+                    .map(|p| p.name.clone())
+                    .unwrap_or_default(),
+            )
+            .show_ui(ui, |ui| {
+                for p in &st.palettes {
+                    ui.selectable_value(&mut st.selected_palette_id, p.id.clone(), &p.name);
+                }
+            });
+        if ui
+            .small_button("+FG")
+            .on_hover_text("Save foreground color as a swatch")
+            .clicked()
+        {
+            let fg = st.foreground_color.clone();
+            if let Some(p) = st.palettes.iter_mut().find(|p| p.id == st.selected_palette_id) {
+                p.swatches.push(ColorSwatch {
+                    id: new_id("sw"),
+                    name: fg.clone(),
+                    color: fg,
+                    swatch_type: Some(SwatchKind::Solid),
+                    gradient_type: None,
+                    gradient_angle: None,
+                    gradient_stops: Vec::new(),
+                    is_none: false,
+                    category: None,
+                    is_favorite: false,
+                });
             }
-        });
-    // The combo above always writes palette_idx; use a stable id-based approach instead.
+            st.hint("Swatch saved");
+        }
+        if ui
+            .small_button("+BG")
+            .on_hover_text("Save background color as a swatch")
+            .clicked()
+        {
+            let bg = st.background_color.clone();
+            if let Some(p) = st.palettes.iter_mut().find(|p| p.id == st.selected_palette_id) {
+                p.swatches.push(ColorSwatch {
+                    id: new_id("sw"),
+                    name: bg.clone(),
+                    color: bg,
+                    swatch_type: Some(SwatchKind::Solid),
+                    gradient_type: None,
+                    gradient_angle: None,
+                    gradient_stops: Vec::new(),
+                    is_none: false,
+                    category: None,
+                    is_favorite: false,
+                });
+            }
+            st.hint("Swatch saved");
+        }
+    });
     ui.add_space(4.0);
 
-    let palette = st.palettes.get(palette_idx).cloned();
+    let palette = st
+        .palettes
+        .iter()
+        .find(|p| p.id == st.selected_palette_id)
+        .cloned();
     if let Some(palette) = palette {
         if let Some(desc) = &palette.description {
             ui.label(RichText::new(desc).size(10.0).color(muted));
         }
         ui.add_space(4.0);
 
+        let mut remove_id: Option<String> = None;
         ui.horizontal_wrapped(|ui| {
             for sw in &palette.swatches {
                 let color = if sw.is_none { Color32::TRANSPARENT } else { hex32(&sw.color) };
@@ -321,15 +381,25 @@ fn swatches_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
                     egui::Stroke::new(1.0_f32, hex32(theme.border_strong)),
                     egui::StrokeKind::Inside,
                 );
-                if resp
-                    .on_hover_text(format!("{} — click: fill · alt-click: stroke", sw.name))
-                    .clicked()
-                {
+                resp.clone().on_hover_text(format!(
+                    "{} — click: fill · alt-click: stroke · right-click: remove",
+                    sw.name
+                ));
+                if resp.clicked() {
                     let target = if ui.input(|i| i.modifiers.alt) { "stroke" } else { "fill" };
                     st.apply_swatch(&sw.color, target);
                 }
+                if resp.secondary_clicked() {
+                    remove_id = Some(sw.id.clone());
+                }
             }
         });
+        if let Some(rid) = remove_id {
+            if let Some(p) = st.palettes.iter_mut().find(|p| p.id == st.selected_palette_id) {
+                p.swatches.retain(|s| s.id != rid);
+            }
+            st.hint("Swatch removed");
+        }
     }
 
     ui.add_space(6.0);
@@ -433,6 +503,164 @@ fn properties_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
                 if let Some(l) = st.selected_layer_mut() {
                     l.y = Some(y);
                 }
+            }
+        });
+    }
+
+    // Vector shape properties.
+    if st.persona == Persona::Vector && !st.selected_shape_ids.is_empty() {
+        ui.separator();
+        ui.label(RichText::new("Selected Shape(s)").strong());
+        if let Some(shape) = st
+            .vector_shapes
+            .iter()
+            .find(|s| st.selected_shape_ids.contains(&s.id))
+            .cloned()
+        {
+            let sid = shape.id.clone();
+            ui.label(
+                RichText::new(format!("{:?} · {}", shape.kind, shape.name.unwrap_or_else(|| sid.clone())))
+                    .size(11.0)
+                    .color(muted),
+            );
+            ui.horizontal(|ui| {
+                for (label, field) in [("X", "x"), ("Y", "y"), ("W", "w"), ("H", "h")] {
+                    ui.label(RichText::new(label).size(11.0).color(muted));
+                    let mut v = match field {
+                        "x" => shape.x,
+                        "y" => shape.y,
+                        "w" => shape.width,
+                        _ => shape.height,
+                    };
+                    if ui.add(egui::DragValue::new(&mut v).speed(1.0)).changed() {
+                        if let Some(s) = st.vector_shapes.iter_mut().find(|s| s.id == sid) {
+                            match field {
+                                "x" => s.x = v,
+                                "y" => s.y = v,
+                                "w" => s.width = v.max(1.0),
+                                _ => s.height = v.max(1.0),
+                            }
+                        }
+                    }
+                }
+            });
+            ui.horizontal(|ui| {
+                ui.label(RichText::new("Fill").size(11.0).color(muted));
+                let mut f = hex32(&shape.fill);
+                if ui.color_edit_button_srgba(&mut f).changed() {
+                    let c = to_hex(f);
+                    if let Some(s) = st.vector_shapes.iter_mut().find(|s| s.id == sid) {
+                        s.fill = c;
+                    }
+                }
+                ui.label(RichText::new("Stroke").size(11.0).color(muted));
+                let mut s = hex32(&shape.stroke);
+                if ui.color_edit_button_srgba(&mut s).changed() {
+                    let c = to_hex(s);
+                    if let Some(sh) = st.vector_shapes.iter_mut().find(|s| s.id == sid) {
+                        sh.stroke = c;
+                    }
+                }
+            });
+            if shape.kind == ShapeKind::Text {
+                ui.label(RichText::new("Text").size(11.0).color(muted));
+                let mut txt = shape.text.clone().unwrap_or_default();
+                if ui.add(egui::TextEdit::singleline(&mut txt)).changed() {
+                    if let Some(s) = st.vector_shapes.iter_mut().find(|s| s.id == sid) {
+                        s.text = Some(txt);
+                    }
+                }
+            }
+        }
+        ui.horizontal(|ui| {
+            if ui.button("Group").clicked() {
+                st.group_selected();
+            }
+            if ui.button("Delete").clicked() {
+                let ids = st.selected_shape_ids.clone();
+                st.vector_shapes.retain(|s| !ids.contains(&s.id));
+                st.selected_shape_ids.clear();
+                st.push_history("Delete Shape(s)");
+            }
+        });
+    }
+
+    // Publish frame properties.
+    if st.persona == Persona::Publish && !st.selected_frame_ids.is_empty() {
+        ui.separator();
+        ui.label(RichText::new("Selected Frame(s)").strong());
+        if let Some(frame) = st
+            .publish_frames
+            .iter()
+            .find(|f| st.selected_frame_ids.contains(&f.id))
+            .cloned()
+        {
+            let fid = frame.id.clone();
+            ui.label(
+                RichText::new(format!("{:?} frame", frame.kind)).size(11.0).color(muted),
+            );
+            ui.horizontal(|ui| {
+                for (label, v0) in [
+                    ("X", frame.x),
+                    ("Y", frame.y),
+                    ("W", frame.width),
+                    ("H", frame.height),
+                ] {
+                    ui.label(RichText::new(label).size(11.0).color(muted));
+                    let mut v = v0;
+                    if ui.add(egui::DragValue::new(&mut v).speed(1.0)).changed() {
+                        if let Some(f) = st.publish_frames.iter_mut().find(|f| f.id == fid) {
+                            match label {
+                                "X" => f.x = v,
+                                "Y" => f.y = v,
+                                "W" => f.width = v.max(1.0),
+                                _ => f.height = v.max(1.0),
+                            }
+                        }
+                    }
+                }
+            });
+            ui.horizontal(|ui| {
+                ui.label(RichText::new("Title").size(11.0).color(muted));
+                let mut t = frame.title.clone().unwrap_or_default();
+                if ui.add(egui::TextEdit::singleline(&mut t)).changed() {
+                    if let Some(f) = st.publish_frames.iter_mut().find(|f| f.id == fid) {
+                        f.title = Some(t);
+                    }
+                }
+            });
+            if frame.kind == FrameKind::Text {
+                ui.label(RichText::new("Content").size(11.0).color(muted));
+                let mut c = frame.content.clone().unwrap_or_default();
+                if ui.add(egui::TextEdit::multiline(&mut c).desired_rows(3)).changed() {
+                    if let Some(f) = st.publish_frames.iter_mut().find(|f| f.id == fid) {
+                        f.content = Some(c);
+                    }
+                }
+                ui.horizontal(|ui| {
+                    ui.label(RichText::new("Size").size(11.0).color(muted));
+                    let mut fs = frame.font_size.unwrap_or(14.0);
+                    if ui.add(egui::DragValue::new(&mut fs).range(1.0..=400.0)).changed() {
+                        if let Some(f) = st.publish_frames.iter_mut().find(|f| f.id == fid) {
+                            f.font_size = Some(fs);
+                        }
+                    }
+                    ui.label(RichText::new("Fill").size(11.0).color(muted));
+                    let mut fl = hex32(frame.fill.as_deref().unwrap_or("#ffffff"));
+                    if ui.color_edit_button_srgba(&mut fl).changed() {
+                        if let Some(f) = st.publish_frames.iter_mut().find(|f| f.id == fid) {
+                            f.fill = Some(to_hex(fl));
+                        }
+                    }
+                });
+            }
+        }
+        ui.horizontal(|ui| {
+            if ui.button("Delete").clicked() {
+                let ids = st.selected_frame_ids.clone();
+                st.publish_frames.retain(|f| !ids.contains(&f.id));
+                st.selected_frame_ids.clear();
+                st.push_history("Delete Frame(s)");
             }
         });
     }
@@ -644,6 +872,43 @@ fn wrap_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
     }
     ui.separator();
     ui.label(RichText::new("Wrap margins (px)").size(11.0).color(muted));
+
+    // Edit margins on all selected frames.
+    let has_selection = !st.selected_frame_ids.is_empty();
+    if !has_selection {
+        ui.label(RichText::new("Select a frame to edit its wrap margins.").size(10.0).color(muted));
+        return;
+    }
+    let mut margin = st
+        .publish_frames
+        .iter()
+        .find(|f| st.selected_frame_ids.contains(&f.id))
+        .and_then(|f| f.wrap_margin)
+        .unwrap_or_default();
+    let mut changed = false;
+    ui.horizontal(|ui| {
+        for (label, v) in [
+            ("T", &mut margin.top),
+            ("R", &mut margin.right),
+            ("B", &mut margin.bottom),
+            ("L", &mut margin.left),
+        ] {
+            ui.label(RichText::new(label).size(10.0).color(muted));
+            if ui
+                .add(egui::DragValue::new(v).range(0.0..=200.0).speed(0.5))
+                .changed()
+            {
+                changed = true;
+            }
+        }
+    });
+    if changed {
+        for f in &mut st.publish_frames {
+            if st.selected_frame_ids.contains(&f.id) {
+                f.wrap_margin = Some(margin);
+            }
+        }
+    }
 }
 
 // ---- Preflight ----------------------------------------------------------------------------------------

@@ -72,6 +72,8 @@ pub fn open_project_dialog(st: &mut AtelierState) {
                         let persona = project.persona;
                         st.project = project;
                         st.persona = persona;
+                        st.selection = None;
+                        st.raster_version += 1;
                         st.push_history("Open Document");
                         st.hint(format!("Opened {}", path.display()));
                     }
@@ -84,33 +86,20 @@ pub fn open_project_dialog(st: &mut AtelierState) {
     }
 }
 
-/// Flatten visible raster/text layers into an RGBA buffer for export.
-/// Vector compositing arrives with the render engine; text is skipped for now.
+/// Flatten the document into an RGBA buffer for export using the real
+/// compositor (blend modes, opacity, visibility) over white paper.
+/// Text/vector-object layers are rasterized by the canvas, not here.
 pub fn composite_raster(st: &AtelierState, scale: f32) -> image::RgbaImage {
-    let w = (st.project.width * scale).round().max(1.0) as u32;
-    let h = (st.project.height * scale).round().max(1.0) as u32;
-    let mut buf = image::RgbaImage::from_pixel(w, h, image::Rgba([255, 255, 255, 255]));
-    for layer in &st.project.layers {
-        if !layer.visible {
-            continue;
-        }
-        let Some(png) = &layer.raster_png else { continue };
-        if let Ok(img) = image::load_from_memory(png) {
-            let mut rgba = img.to_rgba8();
-            if scale != 1.0 {
-                rgba = image::imageops::resize(
-                    &rgba,
-                    (rgba.width() as f32 * scale) as u32,
-                    (rgba.height() as f32 * scale) as u32,
-                    image::imageops::FilterType::Lanczos3,
-                );
-            }
-            let alpha = (layer.opacity.clamp(0.0, 100.0) / 100.0 * 255.0) as u8;
-            for px in rgba.pixels_mut() {
-                px[3] = px[3].saturating_mul(alpha) / 255;
-            }
-            image::imageops::overlay(&mut buf, &rgba, 0, 0);
-        }
+    let w0 = st.project.width.max(1.0) as u32;
+    let h0 = st.project.height.max(1.0) as u32;
+    let mut store = crate::raster::RasterStore::new();
+    let comp = crate::raster::composite(&st.project.layers, &mut store, w0, h0);
+    let mut buf = image::RgbaImage::from_pixel(w0, h0, image::Rgba([255, 255, 255, 255]));
+    image::imageops::overlay(&mut buf, &comp, 0, 0);
+    if scale != 1.0 {
+        let w = (w0 as f32 * scale).round().max(1.0) as u32;
+        let h = (h0 as f32 * scale).round().max(1.0) as u32;
+        buf = image::imageops::resize(&buf, w, h, image::imageops::FilterType::Lanczos3);
     }
     buf
 }

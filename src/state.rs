@@ -4,6 +4,7 @@
 
 use crate::model::*;
 use crate::presets;
+use crate::raster::Selection;
 use crate::shortcuts;
 use std::collections::BTreeMap;
 use std::time::Instant;
@@ -203,6 +204,38 @@ pub struct AtelierState {
     // Dialog scratch state
     pub export: ExportSettings,
     pub new_doc: NewDocSettings,
+
+    // Canvas interaction state
+    /// Active pixel selection (marquee / lasso), in doc coords.
+    pub selection: Option<Selection>,
+    /// Internal clipboard for cut/copy/paste.
+    pub clipboard: Clipboard,
+    /// In-progress Bézier pen path (vector persona).
+    pub pen_path: Vec<VectorPoint>,
+    /// Healing/clone-stamp source point (doc coords), set by Alt+click.
+    pub clone_source: Option<(f32, f32)>,
+    /// Selected swatch palette for the dock panel.
+    pub selected_palette_id: String,
+    /// Last known canvas viewport size (for fit-to-screen).
+    pub viewport_size: [f32; 2],
+    /// Bumped whenever raster buffers change → forces recomposite.
+    pub raster_version: u64,
+    /// Node being dragged by Direct Select: (shape_id, point_index).
+    pub editing_node: Option<(String, usize)>,
+    /// Live paint stroke in progress (suppresses mid-stroke history).
+    pub painting: bool,
+    /// Guide currently being dragged out of a ruler: (kind).
+    pub pending_guide: Option<GuideKind>,
+}
+
+/// Clipboard payload for cut/copy/paste.
+#[derive(Clone, Debug, Default)]
+pub enum Clipboard {
+    #[default]
+    Empty,
+    Layers(Vec<Layer>),
+    Shapes(Vec<VectorShape>),
+    Frames(Vec<PublishFrame>),
 }
 
 impl AtelierState {
@@ -281,6 +314,16 @@ impl AtelierState {
             plugins: presets::sample_plugins(),
             export: ExportSettings::default(),
             new_doc: NewDocSettings::default(),
+            selection: None,
+            clipboard: Clipboard::Empty,
+            pen_path: Vec::new(),
+            clone_source: None,
+            selected_palette_id: "palette-core".into(),
+            viewport_size: [1200.0, 800.0],
+            raster_version: 0,
+            editing_node: None,
+            painting: false,
+            pending_guide: None,
         }
     }
 
@@ -350,6 +393,11 @@ impl AtelierState {
         self.zoom = 1.0;
         self.pan_x = 0.0;
         self.pan_y = 0.0;
+    }
+
+    pub fn fit(&mut self) {
+        let [viewport_w, viewport_h] = self.viewport_size;
+        self.fit_to_screen(viewport_w, viewport_h);
     }
 
     pub fn fit_to_screen(&mut self, viewport_w: f32, viewport_h: f32) {
@@ -525,7 +573,22 @@ impl AtelierState {
                 ("saturation".into(), 10.0),
                 ("lightness".into(), 0.0),
             ]),
-            _ => BTreeMap::new(),
+            AdjustmentType::Levels => BTreeMap::from([
+                ("black point".into(), 0.0),
+                ("midtones".into(), 0.0),
+                ("white point".into(), 0.0),
+            ]),
+            AdjustmentType::Curves => BTreeMap::from([
+                ("shadows".into(), 0.0),
+                ("midtones".into(), 0.0),
+                ("highlights".into(), 0.0),
+            ]),
+            AdjustmentType::ColorBalance => BTreeMap::from([
+                ("cyan-red".into(), 0.0),
+                ("magenta-green".into(), 0.0),
+                ("yellow-blue".into(), 0.0),
+            ]),
+            AdjustmentType::Invert => BTreeMap::from([("strength".into(), 100.0)]),
         });
         let label = adj.label().to_string();
         self.project.layers.push(layer);
@@ -798,6 +861,12 @@ impl AtelierState {
             }
             Persona::Photo => {
                 self.selected_layer_ids = self.project.layers.iter().map(|l| l.id.clone()).collect();
+                self.selection = Some(crate::raster::Selection::Rect(
+                    0.0,
+                    0.0,
+                    self.project.width,
+                    self.project.height,
+                ));
             }
         }
         self.hint("Selected All");
@@ -807,6 +876,7 @@ impl AtelierState {
         self.selected_shape_ids.clear();
         self.selected_frame_ids.clear();
         self.selected_layer_ids.clear();
+        self.selection = None;
         self.hint("Deselected");
     }
 
@@ -1048,6 +1118,214 @@ impl AtelierState {
     pub fn mark_saved(&mut self) {
         self.sync_status = SyncStatus::Synced;
         self.last_saved_at = now_millis();
+    }
+
+    // ---- Clipboard ---------------------------------------------------------------
+
+    pub fn copy_selection(&mut self, cut: bool) {
+        match self.persona {
+            Persona::Vector => {
+                let items: Vec<VectorShape> = self
+                    .vector_shapes
+                    .iter()
+                    .filter(|s| self.selected_shape_ids.contains(&s.id))
+                    .cloned()
+                    .collect();
+                if items.is_empty() {
+                    self.hint("Nothing selected to copy");
+                    return;
+                }
+                if cut {
+                    self.vector_shapes
+                        .retain(|s| !self.selected_shape_ids.contains(&s.id));
+                    self.selected_shape_ids.clear();
+                }
+                self.clipboard = Clipboard::Shapes(items);
+            }
+            Persona::Publish => {
+                let items: Vec<PublishFrame> = self
+                    .publish_frames
+                    .iter()
+                    .filter(|f| self.selected_frame_ids.contains(&f.id))
+                    .cloned()
+                    .collect();
+                if items.is_empty() {
+                    self.hint("Nothing selected to copy");
+                    return;
+                }
+                if cut {
+                    self.publish_frames
+                        .retain(|f| !self.selected_frame_ids.contains(&f.id));
+                    self.selected_frame_ids.clear();
+                }
+                self.clipboard = Clipboard::Frames(items);
+            }
+            Persona::Photo => {
+                let layer = match self.selected_layer() {
+                    Some(l) => l.clone(),
+                    None => {
+                        self.hint("Nothing selected to copy");
+                        return;
+                    }
+                };
+                if cut {
+                    if self.project.layers.len() <= 1 {
+                        self.hint("Cannot cut the last layer");
+                        return;
+                    }
+                    self.project.layers.retain(|l| l.id != layer.id);
+                    if let Some(last) = self.project.layers.last() {
+                        self.project.selected_layer_id = last.id.clone();
+                    }
+                }
+                self.clipboard = Clipboard::Layers(vec![layer]);
+            }
+        }
+        self.hint(if cut { "Cut to clipboard" } else { "Copied to clipboard" });
+        if cut {
+            self.push_history("Cut Selection");
+        }
+    }
+
+    pub fn paste_clipboard(&mut self) {
+        match self.clipboard.clone() {
+            Clipboard::Layers(layers) => {
+                for mut l in layers {
+                    l.id = new_id("layer");
+                    l.name = format!("{} Paste", l.name);
+                    self.project.selected_layer_id = l.id.clone();
+                    self.project.layers.push(l);
+                }
+                self.project.updated_at = now_millis();
+                self.push_history("Paste Layer");
+            }
+            Clipboard::Shapes(shapes) => {
+                let mut ids = Vec::new();
+                for mut s in shapes {
+                    s.id = new_id("shape");
+                    s.x += 16.0;
+                    s.y += 16.0;
+                    ids.push(s.id.clone());
+                    self.vector_shapes.push(s);
+                }
+                self.selected_shape_ids = ids;
+                self.push_history("Paste Shapes");
+            }
+            Clipboard::Frames(frames) => {
+                let mut ids = Vec::new();
+                for mut f in frames {
+                    f.id = new_id("frame");
+                    f.x += 16.0;
+                    f.y += 16.0;
+                    ids.push(f.id.clone());
+                    self.publish_frames.push(f);
+                }
+                self.selected_frame_ids = ids;
+                self.push_history("Paste Frames");
+            }
+            Clipboard::Empty => self.hint("Clipboard is empty"),
+        }
+        if !matches!(self.clipboard, Clipboard::Empty) {
+            self.hint("Pasted");
+        }
+    }
+
+    // ---- Pen tool (vector) ----------------------------------------------------------
+
+    /// Commit the in-progress pen path as a Path shape.
+    pub fn commit_pen_path(&mut self, close: bool) {
+        if self.pen_path.len() < 2 {
+            self.pen_path.clear();
+            return;
+        }
+        let (mut x0, mut y0, mut x1, mut y1) =
+            (f32::INFINITY, f32::INFINITY, f32::NEG_INFINITY, f32::NEG_INFINITY);
+        for p in &self.pen_path {
+            x0 = x0.min(p.x);
+            y0 = y0.min(p.y);
+            x1 = x1.max(p.x);
+            y1 = y1.max(p.y);
+        }
+        let mut sh = VectorShape::new(ShapeKind::Path, x0, y0, x1 - x0, y1 - y0);
+        sh.points = Some(self.pen_path.clone());
+        sh.fill = "none".into();
+        sh.stroke = self.vector_stroke.clone();
+        sh.stroke_width = self.vector_stroke_width.max(1.0);
+        if !close {
+            sh.name = Some("Open Path".into());
+        }
+        let id = sh.id.clone();
+        self.vector_shapes.push(sh);
+        self.selected_shape_ids = vec![id];
+        self.pen_path.clear();
+        self.push_history(if close { "Pen: Close Path" } else { "Pen: Draw Path" });
+        self.hint("Path committed — Enter closes, Esc cancels");
+    }
+
+    // ---- Crop ------------------------------------------------------------------------
+
+    /// Crop the document to a rect (doc coords). Resizes the canvas and
+    /// re-anchors all object coordinates.
+    pub fn apply_crop(&mut self, x: f32, y: f32, w: f32, h: f32) {
+        if w < 8.0 || h < 8.0 {
+            self.hint("Crop region too small");
+            return;
+        }
+        self.project.width = w;
+        self.project.height = h;
+        for l in &mut self.project.layers {
+            if let Some(lx) = l.x.as_mut() {
+                *lx -= x;
+            }
+            if let Some(ly) = l.y.as_mut() {
+                *ly -= y;
+            }
+            if l.layer_type == LayerType::Raster || l.layer_type == LayerType::Vector {
+                l.width = Some(w);
+                l.height = Some(h);
+            }
+        }
+        for s in &mut self.vector_shapes {
+            s.x -= x;
+            s.y -= y;
+            if let Some(pts) = &mut s.points {
+                for p in pts.iter_mut() {
+                    p.x -= x;
+                    p.y -= y;
+                }
+            }
+        }
+        for f in &mut self.publish_frames {
+            f.x -= x;
+            f.y -= y;
+        }
+        for g in &mut self.guides {
+            g.position = match g.kind {
+                GuideKind::Horizontal => (g.position - y).max(0.0),
+                GuideKind::Vertical => (g.position - x).max(0.0),
+            };
+        }
+        self.selection = None;
+        self.project.updated_at = now_millis();
+        self.raster_version += 1;
+        self.push_history("Crop Canvas");
+        self.hint(format!("Cropped to {}×{}", w as i32, h as i32));
+    }
+
+    /// The layer painting operates on: selected raster layer, else the topmost
+    /// raster layer, else None (caller auto-creates one).
+    pub fn paint_target_layer(&self) -> Option<String> {
+        if let Some(l) = self.selected_layer() {
+            if l.layer_type == LayerType::Raster && !l.locked {
+                return Some(l.id.clone());
+            }
+        }
+        self.project
+            .layers
+            .iter()
+            .rev()
+            .find(|l| l.layer_type == LayerType::Raster && !l.locked)
+            .map(|l| l.id.clone())
     }
 }
 

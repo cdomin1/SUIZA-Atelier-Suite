@@ -46,6 +46,19 @@ pub fn top_nav(ui: &mut egui::Ui, st: &mut AtelierState) {
                 ui.close_menu();
             }
             ui.separator();
+            if ui.button("Cut  Ctrl+X").clicked() {
+                st.copy_selection(true);
+                ui.close_menu();
+            }
+            if ui.button("Copy  Ctrl+C").clicked() {
+                st.copy_selection(false);
+                ui.close_menu();
+            }
+            if ui.button("Paste  Ctrl+V").clicked() {
+                st.paste_clipboard();
+                ui.close_menu();
+            }
+            ui.separator();
             if ui.button("Select All  Ctrl+A").clicked() {
                 st.select_all();
                 ui.close_menu();
@@ -93,7 +106,7 @@ pub fn top_nav(ui: &mut egui::Ui, st: &mut AtelierState) {
         });
         ui.menu_button("View", |ui| {
             if ui.button("Fit to Screen  Ctrl+0").clicked() {
-                st.hint("Fit to Screen (pending canvas size)");
+                st.fit();
                 ui.close_menu();
             }
             if ui.button("Actual Pixels  Ctrl+1").clicked() {
@@ -250,7 +263,7 @@ pub fn option_bar(ui: &mut egui::Ui, st: &mut AtelierState) {
                 ui.label(RichText::new("Zoom").size(11.0).color(muted));
                 ui.add_sized([120.0, 18.0], egui::Slider::new(&mut st.zoom, 0.05..=16.0).logarithmic(true));
                 if ui.button("Fit").clicked() {
-                    st.hint("Fit to Screen");
+                    st.fit();
                 }
                 if ui.button("100%").clicked() {
                     st.zoom = 1.0;
