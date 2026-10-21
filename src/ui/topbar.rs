@@ -13,7 +13,7 @@ pub fn top_nav(ui: &mut egui::Ui, st: &mut AtelierState) {
     let muted = hex32(theme.text_muted);
 
     ui.horizontal(|ui| {
-        ui.label(RichText::new("SUIZA Atelier").strong().color(accent));
+        ui.label(RichText::new("SUIZA Atelier Suite").strong().color(accent));
         ui.separator();
 
         // Menus

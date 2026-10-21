@@ -9,7 +9,7 @@ use std::path::PathBuf;
 pub fn save_project_dialog(st: &mut AtelierState) {
     let Some(path) = rfd::FileDialog::new()
         .set_file_name(&st.project.name)
-        .add_filter("SUIZA Atelier Document", &["szt"])
+        .add_filter("SUIZA Atelier Suite Document", &["szt"])
         .save_file()
     else {
         return;
@@ -24,7 +24,7 @@ pub fn save_project_dialog(st: &mut AtelierState) {
 
 pub fn save_project(st: &AtelierState, path: &PathBuf) -> std::io::Result<()> {
     let envelope = serde_json::json!({
-        "app": "SUIZA Atelier",
+        "app": "SUIZA Atelier Suite",
         "version": env!("CARGO_PKG_VERSION"),
         "format": "szt",
         "project": st.project,
@@ -42,7 +42,7 @@ pub fn save_project(st: &AtelierState, path: &PathBuf) -> std::io::Result<()> {
 
 pub fn open_project_dialog(st: &mut AtelierState) {
     let Some(path) = rfd::FileDialog::new()
-        .add_filter("SUIZA Atelier Document", &["szt"])
+        .add_filter("SUIZA Atelier Suite Document", &["szt"])
         .pick_file()
     else {
         return;

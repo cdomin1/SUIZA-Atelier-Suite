@@ -281,7 +281,7 @@ fn rust_arch_modal(ctx: &egui::Context, st: &mut AtelierState) {
         .open(&mut open)
         .default_width(440.0)
         .show(ctx, |ui| {
-            ui.label("SUIZA Atelier runs on a native Rust core — no browser, no GC:");
+            ui.label("SUIZA Atelier Suite runs on a native Rust core — no browser, no GC:");
             ui.add_space(6.0);
             for line in [
                 "egui/eframe immediate-mode GPU UI (wgpu/glow backends)",
@@ -293,7 +293,7 @@ fn rust_arch_modal(ctx: &egui::Context, st: &mut AtelierState) {
                 ui.label(format!("· {line}"));
             }
             ui.add_space(6.0);
-            ui.monospace(format!("suiza-atelier {}", env!("CARGO_PKG_VERSION")));
+            ui.monospace(format!("suiza-atelier-suite {}", env!("CARGO_PKG_VERSION")));
         });
     if !open {
         st.active_modal = None;

@@ -1,9 +1,9 @@
 [package]
-name = "suiza-atelier"
+name = "suiza-atelier-suite"
 version = "0.1.0-alpha.1"
 edition = "2021"
 license = "Apache-2.0"
-description = "SUIZA Atelier — memory-safe creative suite (Photo / Vector / Publish) in Rust"
+description = "SUIZA Atelier Suite — memory-safe creative suite (Photo / Vector / Publish) in Rust"
 
 [dependencies]
 eframe = "0.31.1"

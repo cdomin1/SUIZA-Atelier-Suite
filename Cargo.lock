@@ -2945,7 +2945,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "suiza-atelier"
+name = "suiza-atelier-suite"
 version = "0.1.0-alpha.1"
 dependencies = [
  "eframe",
