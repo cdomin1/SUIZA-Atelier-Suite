@@ -87,7 +87,7 @@ so a document is a single portable file.
 ## Related projects
 
 - [`SUIZA-Canvas`](https://github.com/cdomin1/SUIZA-Canvas) — a separate
-  Rust/egui vector design editor
+  Rust/egui UI/UX vector design editor
 
 ## License
 
