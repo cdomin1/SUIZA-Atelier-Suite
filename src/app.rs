@@ -83,7 +83,11 @@ impl AtelierApp {
             "view-guides" => st.show_guides = !st.show_guides,
             "view-snap" => {
                 st.snapping.enabled = !st.snapping.enabled;
-                st.hint(if st.snapping.enabled { "Magnetic Snapping ON" } else { "Snapping OFF" });
+                st.hint(if st.snapping.enabled {
+                    "Magnetic Snapping ON"
+                } else {
+                    "Snapping OFF"
+                });
             }
             "view-lockguides" => st.lock_guides = !st.lock_guides,
             "view-grid" => st.show_grid = !st.show_grid,

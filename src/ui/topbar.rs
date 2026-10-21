@@ -127,10 +127,7 @@ pub fn top_nav(ui: &mut egui::Ui, st: &mut AtelierState) {
         });
         ui.menu_button("Studio", |ui| {
             for p in Persona::ALL {
-                if ui
-                    .selectable_label(st.persona == p, p.label())
-                    .clicked()
-                {
+                if ui.selectable_label(st.persona == p, p.label()).clicked() {
                     st.set_persona(p);
                     ui.close_menu();
                 }
@@ -190,7 +187,10 @@ pub fn top_nav(ui: &mut egui::Ui, st: &mut AtelierState) {
                 };
                 let active = st.persona == p;
                 let text = if active {
-                    RichText::new(short).color(egui::Color32::WHITE).strong().size(11.0)
+                    RichText::new(short)
+                        .color(egui::Color32::WHITE)
+                        .strong()
+                        .size(11.0)
                 } else {
                     RichText::new(short).color(muted).size(11.0)
                 };
@@ -215,23 +215,42 @@ pub fn option_bar(ui: &mut egui::Ui, st: &mut AtelierState) {
         match st.active_tool {
             ToolId::Brush | ToolId::Eraser | ToolId::Healing | ToolId::Dodge | ToolId::Burn => {
                 ui.label(RichText::new("Size").size(11.0).color(muted));
-                ui.add_sized([100.0, 18.0], egui::Slider::new(&mut o.brush_size, 1.0..=500.0).logarithmic(true));
+                ui.add_sized(
+                    [100.0, 18.0],
+                    egui::Slider::new(&mut o.brush_size, 1.0..=500.0).logarithmic(true),
+                );
                 ui.label(RichText::new("Hardness").size(11.0).color(muted));
-                ui.add_sized([80.0, 18.0], egui::Slider::new(&mut o.brush_hardness, 0.0..=100.0).suffix("%"));
+                ui.add_sized(
+                    [80.0, 18.0],
+                    egui::Slider::new(&mut o.brush_hardness, 0.0..=100.0).suffix("%"),
+                );
                 ui.label(RichText::new("Opacity").size(11.0).color(muted));
-                ui.add_sized([80.0, 18.0], egui::Slider::new(&mut o.brush_opacity, 0.0..=100.0).suffix("%"));
+                ui.add_sized(
+                    [80.0, 18.0],
+                    egui::Slider::new(&mut o.brush_opacity, 0.0..=100.0).suffix("%"),
+                );
                 ui.label(RichText::new("Flow").size(11.0).color(muted));
-                ui.add_sized([80.0, 18.0], egui::Slider::new(&mut o.brush_flow, 0.0..=100.0).suffix("%"));
+                ui.add_sized(
+                    [80.0, 18.0],
+                    egui::Slider::new(&mut o.brush_flow, 0.0..=100.0).suffix("%"),
+                );
             }
-            ToolId::Pen | ToolId::ShapeRect | ToolId::ShapeEllipse | ToolId::ShapePolygon
-            | ToolId::FrameShape | ToolId::LineTool => {
+            ToolId::Pen
+            | ToolId::ShapeRect
+            | ToolId::ShapeEllipse
+            | ToolId::ShapePolygon
+            | ToolId::FrameShape
+            | ToolId::LineTool => {
                 ui.label(RichText::new("Stroke").size(11.0).color(muted));
                 let mut sc = hex32(&o.stroke_color);
                 if ui.color_edit_button_srgba(&mut sc).changed() {
                     o.stroke_color = to_hex(sc);
                 }
                 ui.label(RichText::new("Width").size(11.0).color(muted));
-                ui.add_sized([80.0, 18.0], egui::Slider::new(&mut o.stroke_width, 0.0..=48.0).suffix("px"));
+                ui.add_sized(
+                    [80.0, 18.0],
+                    egui::Slider::new(&mut o.stroke_width, 0.0..=48.0).suffix("px"),
+                );
                 ui.label(RichText::new("Fill").size(11.0).color(muted));
                 let mut fc = hex32(&o.fill_color);
                 if ui.color_edit_button_srgba(&mut fc).changed() {
@@ -239,14 +258,22 @@ pub fn option_bar(ui: &mut egui::Ui, st: &mut AtelierState) {
                 }
                 if st.persona == Persona::Vector {
                     ui.label(RichText::new("Corner").size(11.0).color(muted));
-                    ui.add_sized([70.0, 18.0], egui::Slider::new(&mut st.vector_corner_radius, 0.0..=100.0).suffix("px"));
+                    ui.add_sized(
+                        [70.0, 18.0],
+                        egui::Slider::new(&mut st.vector_corner_radius, 0.0..=100.0).suffix("px"),
+                    );
                 }
             }
             ToolId::Text | ToolId::FrameText => {
                 ui.label(RichText::new("Font").size(11.0).color(muted));
                 ui.add(egui::TextEdit::singleline(&mut o.font_family).desired_width(140.0));
                 ui.label(RichText::new("Size").size(11.0).color(muted));
-                ui.add_sized([90.0, 18.0], egui::Slider::new(&mut o.font_size, 6.0..=400.0).logarithmic(true).suffix("pt"));
+                ui.add_sized(
+                    [90.0, 18.0],
+                    egui::Slider::new(&mut o.font_size, 6.0..=400.0)
+                        .logarithmic(true)
+                        .suffix("pt"),
+                );
                 ui.label(RichText::new("Color").size(11.0).color(muted));
                 let mut tc = hex32(&o.text_color);
                 if ui.color_edit_button_srgba(&mut tc).changed() {
@@ -256,12 +283,19 @@ pub fn option_bar(ui: &mut egui::Ui, st: &mut AtelierState) {
                     ui.label(RichText::new("Cols").size(11.0).color(muted));
                     ui.add(egui::DragValue::new(&mut st.publish_column_count).range(1..=12));
                     ui.label(RichText::new("Gutter").size(11.0).color(muted));
-                    ui.add(egui::DragValue::new(&mut st.publish_column_gutter).range(0.0..=120.0).suffix("px"));
+                    ui.add(
+                        egui::DragValue::new(&mut st.publish_column_gutter)
+                            .range(0.0..=120.0)
+                            .suffix("px"),
+                    );
                 }
             }
             ToolId::Zoom => {
                 ui.label(RichText::new("Zoom").size(11.0).color(muted));
-                ui.add_sized([120.0, 18.0], egui::Slider::new(&mut st.zoom, 0.05..=16.0).logarithmic(true));
+                ui.add_sized(
+                    [120.0, 18.0],
+                    egui::Slider::new(&mut st.zoom, 0.05..=16.0).logarithmic(true),
+                );
                 if ui.button("Fit").clicked() {
                     st.fit();
                 }
@@ -285,7 +319,11 @@ pub fn option_bar(ui: &mut egui::Ui, st: &mut AtelierState) {
                 ColorMode::Cmyk => "CMYK/8",
                 ColorMode::Grayscale => "GRAY/8",
             };
-            ui.label(RichText::new(format!("{} · {}dpi", mode, st.project.dpi)).size(11.0).color(muted));
+            ui.label(
+                RichText::new(format!("{} · {}dpi", mode, st.project.dpi))
+                    .size(11.0)
+                    .color(muted),
+            );
             if st.snapping.enabled {
                 ui.label(RichText::new("SNAP").size(10.0).monospace().color(accent));
             }

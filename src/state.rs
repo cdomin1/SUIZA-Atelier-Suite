@@ -271,8 +271,22 @@ impl AtelierState {
             show_guides: true,
             show_grid: false,
             guides: vec![
-                Guide { id: "guide-default-h1".into(), kind: GuideKind::Horizontal, position: 150.0, locked: false, color: None, name: None },
-                Guide { id: "guide-default-v1".into(), kind: GuideKind::Vertical, position: 200.0, locked: false, color: None, name: None },
+                Guide {
+                    id: "guide-default-h1".into(),
+                    kind: GuideKind::Horizontal,
+                    position: 150.0,
+                    locked: false,
+                    color: None,
+                    name: None,
+                },
+                Guide {
+                    id: "guide-default-v1".into(),
+                    kind: GuideKind::Vertical,
+                    position: 200.0,
+                    locked: false,
+                    color: None,
+                    name: None,
+                },
             ],
             snapping: SnappingConfig::default(),
             lock_guides: false,
@@ -485,7 +499,11 @@ impl AtelierState {
             color: None,
             name: None,
         });
-        let k = if kind == GuideKind::Horizontal { "horizontal" } else { "vertical" };
+        let k = if kind == GuideKind::Horizontal {
+            "horizontal"
+        } else {
+            "vertical"
+        };
         self.hint(format!("Added {k} guide at {position}px"));
     }
 
@@ -544,7 +562,11 @@ impl AtelierState {
             .filter(|l| l.layer_type == LayerType::Group)
             .count()
             + 1;
-        let mut group = Layer::new(&id, name.unwrap_or_else(|| format!("Group {n}")), LayerType::Group);
+        let mut group = Layer::new(
+            &id,
+            name.unwrap_or_else(|| format!("Group {n}")),
+            LayerType::Group,
+        );
         group.collapsed = Some(false);
         let gname = group.name.clone();
         self.project.layers.push(group);
@@ -725,10 +747,23 @@ impl AtelierState {
                 let min_y = s1.y.min(s2.y);
                 let max_x = (s1.x + s1.width).max(s2.x + s2.width);
                 let max_y = (s1.y + s1.height).max(s2.y + s2.height);
-                let mut sh = VectorShape::new(ShapeKind::Rect, min_x, min_y, max_x - min_x, max_y - min_y);
-                sh.fill = if s2.fill.is_empty() { s1.fill.clone() } else { s2.fill.clone() };
-                sh.stroke = if s2.stroke.is_empty() { s1.stroke.clone() } else { s2.stroke.clone() };
-                sh.stroke_width = if s2.stroke_width > 0.0 { s2.stroke_width } else { s1.stroke_width };
+                let mut sh =
+                    VectorShape::new(ShapeKind::Rect, min_x, min_y, max_x - min_x, max_y - min_y);
+                sh.fill = if s2.fill.is_empty() {
+                    s1.fill.clone()
+                } else {
+                    s2.fill.clone()
+                };
+                sh.stroke = if s2.stroke.is_empty() {
+                    s1.stroke.clone()
+                } else {
+                    s2.stroke.clone()
+                };
+                sh.stroke_width = if s2.stroke_width > 0.0 {
+                    s2.stroke_width
+                } else {
+                    s1.stroke_width
+                };
                 sh.corner_radius = Some(6.0);
                 Some((sh, "Pathfinder: Unite (Merged Shapes)"))
             }
@@ -857,10 +892,12 @@ impl AtelierState {
                 self.selected_shape_ids = self.vector_shapes.iter().map(|s| s.id.clone()).collect();
             }
             Persona::Publish => {
-                self.selected_frame_ids = self.publish_frames.iter().map(|f| f.id.clone()).collect();
+                self.selected_frame_ids =
+                    self.publish_frames.iter().map(|f| f.id.clone()).collect();
             }
             Persona::Photo => {
-                self.selected_layer_ids = self.project.layers.iter().map(|l| l.id.clone()).collect();
+                self.selected_layer_ids =
+                    self.project.layers.iter().map(|l| l.id.clone()).collect();
                 self.selection = Some(crate::raster::Selection::Rect(
                     0.0,
                     0.0,
@@ -997,7 +1034,8 @@ impl AtelierState {
 
     pub fn bring_to_front(&mut self) {
         fn front<T: HasId + Clone>(items: &mut Vec<T>, sel: &[String]) {
-            let (a, b): (Vec<T>, Vec<T>) = items.iter().cloned().partition(|i| sel.contains(i.id()));
+            let (a, b): (Vec<T>, Vec<T>) =
+                items.iter().cloned().partition(|i| sel.contains(i.id()));
             *items = b.into_iter().chain(a).collect();
         }
         match self.persona {
@@ -1010,7 +1048,8 @@ impl AtelierState {
 
     pub fn send_to_back(&mut self) {
         fn back<T: HasId + Clone>(items: &mut Vec<T>, sel: &[String]) {
-            let (a, b): (Vec<T>, Vec<T>) = items.iter().cloned().partition(|i| sel.contains(i.id()));
+            let (a, b): (Vec<T>, Vec<T>) =
+                items.iter().cloned().partition(|i| sel.contains(i.id()));
             *items = a.into_iter().chain(b).collect();
         }
         match self.persona {
@@ -1028,9 +1067,15 @@ impl AtelierState {
                 return false;
             }
             let min_x = selected.iter().map(|i| i.x()).fold(f32::INFINITY, f32::min);
-            let max_x = selected.iter().map(|i| i.x() + i.w()).fold(f32::NEG_INFINITY, f32::max);
+            let max_x = selected
+                .iter()
+                .map(|i| i.x() + i.w())
+                .fold(f32::NEG_INFINITY, f32::max);
             let min_y = selected.iter().map(|i| i.y()).fold(f32::INFINITY, f32::min);
-            let max_y = selected.iter().map(|i| i.y() + i.h()).fold(f32::NEG_INFINITY, f32::max);
+            let max_y = selected
+                .iter()
+                .map(|i| i.y() + i.h())
+                .fold(f32::NEG_INFINITY, f32::max);
             let mid_x = (min_x + max_x) / 2.0;
             let mid_y = (min_y + max_y) / 2.0;
             for i in items.iter_mut() {
@@ -1049,8 +1094,12 @@ impl AtelierState {
             true
         }
         let done = match self.persona {
-            Persona::Vector => align_items(&mut self.vector_shapes, &self.selected_shape_ids, align),
-            Persona::Publish => align_items(&mut self.publish_frames, &self.selected_frame_ids, align),
+            Persona::Vector => {
+                align_items(&mut self.vector_shapes, &self.selected_shape_ids, align)
+            }
+            Persona::Publish => {
+                align_items(&mut self.publish_frames, &self.selected_frame_ids, align)
+            }
             Persona::Photo => false,
         };
         if done {
@@ -1181,7 +1230,11 @@ impl AtelierState {
                 self.clipboard = Clipboard::Layers(vec![layer]);
             }
         }
-        self.hint(if cut { "Cut to clipboard" } else { "Copied to clipboard" });
+        self.hint(if cut {
+            "Cut to clipboard"
+        } else {
+            "Copied to clipboard"
+        });
         if cut {
             self.push_history("Cut Selection");
         }
@@ -1238,8 +1291,12 @@ impl AtelierState {
             self.pen_path.clear();
             return;
         }
-        let (mut x0, mut y0, mut x1, mut y1) =
-            (f32::INFINITY, f32::INFINITY, f32::NEG_INFINITY, f32::NEG_INFINITY);
+        let (mut x0, mut y0, mut x1, mut y1) = (
+            f32::INFINITY,
+            f32::INFINITY,
+            f32::NEG_INFINITY,
+            f32::NEG_INFINITY,
+        );
         for p in &self.pen_path {
             x0 = x0.min(p.x);
             y0 = y0.min(p.y);
@@ -1258,7 +1315,11 @@ impl AtelierState {
         self.vector_shapes.push(sh);
         self.selected_shape_ids = vec![id];
         self.pen_path.clear();
-        self.push_history(if close { "Pen: Close Path" } else { "Pen: Draw Path" });
+        self.push_history(if close {
+            "Pen: Close Path"
+        } else {
+            "Pen: Draw Path"
+        });
         self.hint("Path committed — Enter closes, Esc cancels");
     }
 
@@ -1350,12 +1411,24 @@ impl HasId for VectorShape {
     }
 }
 impl Alignable for VectorShape {
-    fn x(&self) -> f32 { self.x }
-    fn y(&self) -> f32 { self.y }
-    fn w(&self) -> f32 { self.width }
-    fn h(&self) -> f32 { self.height }
-    fn set_x(&mut self, v: f32) { self.x = v; }
-    fn set_y(&mut self, v: f32) { self.y = v; }
+    fn x(&self) -> f32 {
+        self.x
+    }
+    fn y(&self) -> f32 {
+        self.y
+    }
+    fn w(&self) -> f32 {
+        self.width
+    }
+    fn h(&self) -> f32 {
+        self.height
+    }
+    fn set_x(&mut self, v: f32) {
+        self.x = v;
+    }
+    fn set_y(&mut self, v: f32) {
+        self.y = v;
+    }
 }
 
 impl HasId for PublishFrame {
@@ -1364,12 +1437,24 @@ impl HasId for PublishFrame {
     }
 }
 impl Alignable for PublishFrame {
-    fn x(&self) -> f32 { self.x }
-    fn y(&self) -> f32 { self.y }
-    fn w(&self) -> f32 { self.width }
-    fn h(&self) -> f32 { self.height }
-    fn set_x(&mut self, v: f32) { self.x = v; }
-    fn set_y(&mut self, v: f32) { self.y = v; }
+    fn x(&self) -> f32 {
+        self.x
+    }
+    fn y(&self) -> f32 {
+        self.y
+    }
+    fn w(&self) -> f32 {
+        self.width
+    }
+    fn h(&self) -> f32 {
+        self.height
+    }
+    fn set_x(&mut self, v: f32) {
+        self.x = v;
+    }
+    fn set_y(&mut self, v: f32) {
+        self.y = v;
+    }
 }
 
 // Initial document/sample data --------------------------------------------------
@@ -1377,8 +1462,20 @@ impl Alignable for PublishFrame {
 pub fn create_initial_project(persona: Persona) -> DocumentProject {
     let is_publish = persona == Persona::Publish;
     let is_vector = persona == Persona::Vector;
-    let width = if is_publish { 2480.0 } else if is_vector { 1920.0 } else { 2560.0 };
-    let height = if is_publish { 1754.0 } else if is_vector { 1080.0 } else { 1440.0 };
+    let width = if is_publish {
+        2480.0
+    } else if is_vector {
+        1920.0
+    } else {
+        2560.0
+    };
+    let height = if is_publish {
+        1754.0
+    } else if is_vector {
+        1080.0
+    } else {
+        1440.0
+    };
 
     let mut base = Layer::new(
         "layer-base",
@@ -1389,7 +1486,11 @@ pub fn create_initial_project(persona: Persona) -> DocumentProject {
         } else {
             "Background Layer"
         },
-        if is_vector { LayerType::Vector } else { LayerType::Raster },
+        if is_vector {
+            LayerType::Vector
+        } else {
+            LayerType::Raster
+        },
     );
     base.width = Some(width);
     base.height = Some(height);
@@ -1406,7 +1507,11 @@ pub fn create_initial_project(persona: Persona) -> DocumentProject {
         t.y = Some(160.0);
         layers.push(t);
     } else if is_publish {
-        let mut h = Layer::new("layer-pub-header", "Editorial Headline Frame", LayerType::Text);
+        let mut h = Layer::new(
+            "layer-pub-header",
+            "Editorial Headline Frame",
+            LayerType::Text,
+        );
         h.text_content = Some("ARCHITECTURAL HORIZONS: ISSUE 42".into());
         h.text_font_size = Some(64.0);
         h.text_font_family = Some("Plus Jakarta Sans".into());
@@ -1436,7 +1541,11 @@ pub fn create_initial_project(persona: Persona) -> DocumentProject {
         width,
         height,
         dpi: 300,
-        color_mode: if is_publish { ColorMode::Cmyk } else { ColorMode::Rgb },
+        color_mode: if is_publish {
+            ColorMode::Cmyk
+        } else {
+            ColorMode::Rgb
+        },
         cmyk_profile: "FOGRA39 (ISO 12647-2)".into(),
         persona,
         selected_layer_id: layers.last().map(|l| l.id.clone()).unwrap_or_default(),
@@ -1445,7 +1554,12 @@ pub fn create_initial_project(persona: Persona) -> DocumentProject {
         active_page_index: 0,
         facing_pages: is_publish,
         bleed: 3.0,
-        margins: Margins { top: 36.0, bottom: 36.0, inside: 48.0, outside: 36.0 },
+        margins: Margins {
+            top: 36.0,
+            bottom: 36.0,
+            inside: 48.0,
+            outside: 36.0,
+        },
         guides: Vec::new(),
         created_at: now_millis(),
         updated_at: now_millis(),
@@ -1531,7 +1645,12 @@ pub fn rgb_to_cmyk(hex: &str) -> CmykColor {
     let (r, g, b) = (r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0);
     let k = 1.0 - r.max(g).max(b);
     if k >= 1.0 {
-        return CmykColor { c: 0, m: 0, y: 0, k: 100 };
+        return CmykColor {
+            c: 0,
+            m: 0,
+            y: 0,
+            k: 100,
+        };
     }
     let c = (1.0 - r - k) / (1.0 - k);
     let m = (1.0 - g - k) / (1.0 - k);

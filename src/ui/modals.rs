@@ -141,9 +141,17 @@ fn new_doc_modal(ctx: &egui::Context, st: &mut AtelierState) {
             ui.label(RichText::new("Custom").strong());
             ui.horizontal(|ui| {
                 ui.label("Size");
-                ui.add(egui::DragValue::new(&mut st.new_doc.width).range(1.0..=20000.0).suffix(" px"));
+                ui.add(
+                    egui::DragValue::new(&mut st.new_doc.width)
+                        .range(1.0..=20000.0)
+                        .suffix(" px"),
+                );
                 ui.label("×");
-                ui.add(egui::DragValue::new(&mut st.new_doc.height).range(1.0..=20000.0).suffix(" px"));
+                ui.add(
+                    egui::DragValue::new(&mut st.new_doc.height)
+                        .range(1.0..=20000.0)
+                        .suffix(" px"),
+                );
                 ui.label("DPI");
                 ui.add(egui::DragValue::new(&mut st.new_doc.dpi).range(72..=1200));
             });
@@ -156,7 +164,11 @@ fn new_doc_modal(ctx: &egui::Context, st: &mut AtelierState) {
                     color_mode: ColorMode::Rgb,
                     persona: st.persona,
                     facing_pages: st.persona == crate::model::Persona::Publish,
-                    page_count: if st.persona == crate::model::Persona::Publish { 4 } else { 1 },
+                    page_count: if st.persona == crate::model::Persona::Publish {
+                        4
+                    } else {
+                        1
+                    },
                 };
                 create_from_preset(st, &p);
                 st.active_modal = None;
@@ -200,34 +212,45 @@ fn shortcuts_modal(ctx: &egui::Context, st: &mut AtelierState) {
             let theme = *theme_by_id(st.theme_id);
             let muted = hex32(theme.text_muted);
             let mut last_cat: Option<String> = None;
-            egui::ScrollArea::vertical().max_height(420.0).show(ui, |ui| {
-                for sc in &st.shortcuts {
-                    let cat = sc.category.label().to_string();
-                    if last_cat.as_deref() != Some(&cat) {
-                        ui.label(RichText::new(&cat).strong());
-                        last_cat = Some(cat);
-                    }
-                    ui.horizontal(|ui| {
-                        ui.label(RichText::new(&sc.name).size(11.0));
-                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                            let mut combo = String::new();
-                            if sc.ctrl {
-                                combo.push_str("Ctrl+");
-                            }
-                            if sc.shift {
-                                combo.push_str("Shift+");
-                            }
-                            if sc.alt {
-                                combo.push_str("Alt+");
-                            }
-                            combo.push_str(&sc.key.to_uppercase());
-                            ui.label(RichText::new(combo).size(11.0).monospace().color(muted));
+            egui::ScrollArea::vertical()
+                .max_height(420.0)
+                .show(ui, |ui| {
+                    for sc in &st.shortcuts {
+                        let cat = sc.category.label().to_string();
+                        if last_cat.as_deref() != Some(&cat) {
+                            ui.label(RichText::new(&cat).strong());
+                            last_cat = Some(cat);
+                        }
+                        ui.horizontal(|ui| {
+                            ui.label(RichText::new(&sc.name).size(11.0));
+                            ui.with_layout(
+                                egui::Layout::right_to_left(egui::Align::Center),
+                                |ui| {
+                                    let mut combo = String::new();
+                                    if sc.ctrl {
+                                        combo.push_str("Ctrl+");
+                                    }
+                                    if sc.shift {
+                                        combo.push_str("Shift+");
+                                    }
+                                    if sc.alt {
+                                        combo.push_str("Alt+");
+                                    }
+                                    combo.push_str(&sc.key.to_uppercase());
+                                    ui.label(
+                                        RichText::new(combo).size(11.0).monospace().color(muted),
+                                    );
+                                },
+                            );
                         });
-                    });
-                }
-            });
+                    }
+                });
             ui.separator();
-            ui.label(RichText::new("Remapping editor is on the roadmap — defaults are active.").size(10.0).color(muted));
+            ui.label(
+                RichText::new("Remapping editor is on the roadmap — defaults are active.")
+                    .size(10.0)
+                    .color(muted),
+            );
         });
     if !open {
         st.active_modal = None;
@@ -242,31 +265,45 @@ fn plugins_modal(ctx: &egui::Context, st: &mut AtelierState) {
         .open(&mut open)
         .default_width(560.0)
         .show(ctx, |ui| {
-            egui::ScrollArea::vertical().max_height(420.0).show(ui, |ui| {
-                let ids: Vec<String> = st.plugins.iter().map(|p| p.id.clone()).collect();
-                for id in ids {
-                    let i = st.plugins.iter().position(|p| p.id == id).unwrap();
-                    let p = st.plugins[i].clone();
-                    ui.horizontal(|ui| {
-                        let mut enabled = p.enabled;
-                        if ui.checkbox(&mut enabled, "").changed() {
-                            st.toggle_plugin(&p.id);
-                        }
-                        ui.vertical(|ui| {
-                            ui.horizontal(|ui| {
-                                ui.label(RichText::new(&p.name).strong().size(11.0));
-                                ui.label(RichText::new(format!("v{}", p.version)).size(10.0).monospace());
-                                if p.memory_safety_verified {
-                                    ui.label(RichText::new("SAFE").size(9.0).monospace().color(hex32("#10b981")));
-                                }
+            egui::ScrollArea::vertical()
+                .max_height(420.0)
+                .show(ui, |ui| {
+                    let ids: Vec<String> = st.plugins.iter().map(|p| p.id.clone()).collect();
+                    for id in ids {
+                        let i = st.plugins.iter().position(|p| p.id == id).unwrap();
+                        let p = st.plugins[i].clone();
+                        ui.horizontal(|ui| {
+                            let mut enabled = p.enabled;
+                            if ui.checkbox(&mut enabled, "").changed() {
+                                st.toggle_plugin(&p.id);
+                            }
+                            ui.vertical(|ui| {
+                                ui.horizontal(|ui| {
+                                    ui.label(RichText::new(&p.name).strong().size(11.0));
+                                    ui.label(
+                                        RichText::new(format!("v{}", p.version))
+                                            .size(10.0)
+                                            .monospace(),
+                                    );
+                                    if p.memory_safety_verified {
+                                        ui.label(
+                                            RichText::new("SAFE")
+                                                .size(9.0)
+                                                .monospace()
+                                                .color(hex32("#10b981")),
+                                        );
+                                    }
+                                });
+                                ui.label(
+                                    RichText::new(format!("{} · {:?}", p.author, p.plugin_type))
+                                        .size(10.0),
+                                );
+                                ui.label(RichText::new(&p.description).size(10.0));
                             });
-                            ui.label(RichText::new(format!("{} · {:?}", p.author, p.plugin_type)).size(10.0));
-                            ui.label(RichText::new(&p.description).size(10.0));
                         });
-                    });
-                    ui.separator();
-                }
-            });
+                        ui.separator();
+                    }
+                });
         });
     if !open {
         st.active_modal = None;

@@ -105,11 +105,7 @@ pub fn composite_raster(st: &AtelierState, scale: f32) -> image::RgbaImage {
 }
 
 pub fn export_image(st: &mut AtelierState, format: &str, scale: f32) {
-    let stem = st
-        .project
-        .name
-        .trim_end_matches(".szt")
-        .to_string();
+    let stem = st.project.name.trim_end_matches(".szt").to_string();
     let Some(path) = rfd::FileDialog::new()
         .set_file_name(format!("{stem}@{scale}x.{format}"))
         .add_filter(format.to_uppercase(), &[format])

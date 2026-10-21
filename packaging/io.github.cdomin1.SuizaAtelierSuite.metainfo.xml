@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.cdomin1.SuizaAtelierSuite</id>
+  <name>SUIZA Atelier Suite</name>
+  <summary>Creative suite — photo retouching, vector illustration, desktop publishing</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>Apache-2.0</project_license>
+  <description>
+    <p>
+      SUIZA Atelier Suite unifies three creative studios in a single native
+      Rust application: raster photo retouching in the spirit of GIMP,
+      vector illustration in the spirit of Inkscape, and desktop publishing
+      in the spirit of Scribus.
+    </p>
+  </description>
+  <launchable type="desktop-id">suiza-atelier.desktop</launchable>
+  <url type="homepage">https://github.com/cdomin1/SUIZA-Atelier-Suite</url>
+  <provides>
+    <binary>suiza-atelier</binary>
+  </provides>
+  <releases>
+    <release version="0.1.0-alpha.1" type="development"/>
+  </releases>
+  <content_rating type="oars-1.1"/>
+</component>

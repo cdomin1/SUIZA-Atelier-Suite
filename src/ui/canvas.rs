@@ -102,7 +102,8 @@ pub fn canvas(ui: &mut egui::Ui, st: &mut AtelierState, eng: &mut CanvasEngine) 
     let accent = hex32(theme.accent);
 
     let available = ui.available_rect_before_wrap();
-    ui.painter().rect_filled(available, 0.0, hex32(theme.bg_canvas));
+    ui.painter()
+        .rect_filled(available, 0.0, hex32(theme.bg_canvas));
     st.viewport_size = [available.width(), available.height()];
 
     let ruler = if st.show_rulers { 20.0 } else { 0.0 };
@@ -111,7 +112,10 @@ pub fn canvas(ui: &mut egui::Ui, st: &mut AtelierState, eng: &mut CanvasEngine) 
     let doc_w = st.project.width * st.zoom;
     let doc_h = st.project.height * st.zoom;
     let origin = canvas_rect.center() - vec2(doc_w / 2.0, doc_h / 2.0) + vec2(st.pan_x, st.pan_y);
-    let view = View { origin, zoom: st.zoom };
+    let view = View {
+        origin,
+        zoom: st.zoom,
+    };
     let doc_rect = view.doc_rect(0.0, 0.0, st.project.width, st.project.height);
 
     // Full-area region (incl. ruler strips) for ruler drags.
@@ -127,8 +131,10 @@ pub fn canvas(ui: &mut egui::Ui, st: &mut AtelierState, eng: &mut CanvasEngine) 
             if let Some(pointer) = ui.input(|i| i.pointer.hover_pos()) {
                 let doc_pt = (pointer - view.origin) / old_zoom;
                 let new_origin = pointer - doc_pt * new_zoom;
-                st.pan_x = new_origin.x - canvas_rect.center().x + st.project.width * new_zoom / 2.0;
-                st.pan_y = new_origin.y - canvas_rect.center().y + st.project.height * new_zoom / 2.0;
+                st.pan_x =
+                    new_origin.x - canvas_rect.center().x + st.project.width * new_zoom / 2.0;
+                st.pan_y =
+                    new_origin.y - canvas_rect.center().y + st.project.height * new_zoom / 2.0;
             }
             st.zoom = new_zoom;
         }
@@ -149,7 +155,8 @@ pub fn canvas(ui: &mut egui::Ui, st: &mut AtelierState, eng: &mut CanvasEngine) 
 
     // ---- Paper ---------------------------------------------------------------------
     let shadow = doc_rect.translate(vec2(6.0, 8.0));
-    ui.painter().rect_filled(shadow, 2.0, Color32::from_black_alpha(90));
+    ui.painter()
+        .rect_filled(shadow, 2.0, Color32::from_black_alpha(90));
     ui.painter().rect_filled(doc_rect, 0.0, Color32::WHITE);
     ui.painter().rect_stroke(
         doc_rect,
@@ -173,7 +180,15 @@ pub fn canvas(ui: &mut egui::Ui, st: &mut AtelierState, eng: &mut CanvasEngine) 
     }
     draw_guides(ui, st, &view, doc_rect);
     if st.show_rulers {
-        draw_rulers(ui, st, &view, available, ruler, theme.border, theme.text_muted);
+        draw_rulers(
+            ui,
+            st,
+            &view,
+            available,
+            ruler,
+            theme.border,
+            theme.text_muted,
+        );
     }
 
     // ---- Tool input -----------------------------------------------------------------------
@@ -264,7 +279,8 @@ pub fn canvas(ui: &mut egui::Ui, st: &mut AtelierState, eng: &mut CanvasEngine) 
 
     // Marquee animation tick.
     if st.selection.is_some() || !st.pen_path.is_empty() {
-        ui.ctx().request_repaint_after(std::time::Duration::from_millis(66));
+        ui.ctx()
+            .request_repaint_after(std::time::Duration::from_millis(66));
     }
 }
 
@@ -281,8 +297,14 @@ fn ruler_guides(
     if ruler <= 0.0 || st.lock_guides {
         return;
     }
-    let h_strip = Rect::from_min_max(available.min, pos2(available.right(), available.top() + ruler));
-    let v_strip = Rect::from_min_max(available.min, pos2(available.left() + ruler, available.bottom()));
+    let h_strip = Rect::from_min_max(
+        available.min,
+        pos2(available.right(), available.top() + ruler),
+    );
+    let v_strip = Rect::from_min_max(
+        available.min,
+        pos2(available.left() + ruler, available.bottom()),
+    );
 
     if full_resp.drag_started() {
         if let Some(p) = full_resp.interact_pointer_pos() {
@@ -312,7 +334,11 @@ fn ruler_guides(
                 let doc_h = st.project.height;
                 let in_doc = d.x >= 0.0 && d.x <= doc_w && d.y >= 0.0 && d.y <= doc_h;
                 if in_doc {
-                    let pos = if kind == GuideKind::Vertical { d.x } else { d.y };
+                    let pos = if kind == GuideKind::Vertical {
+                        d.x
+                    } else {
+                        d.y
+                    };
                     st.add_guide(kind, pos);
                 }
                 st.pending_guide = None;
@@ -452,8 +478,15 @@ fn draw_vector_path(ui: &mut egui::Ui, view: &View, path: &VectorPath) {
     if path.points.len() < 2 {
         return;
     }
-    let pts: Vec<Pos2> = path.points.iter().map(|p| view.doc_to_screen(p.x, p.y)).collect();
-    let stroke = Stroke::new((path.stroke_width * view.zoom).max(0.5), hex32(&path.stroke_color));
+    let pts: Vec<Pos2> = path
+        .points
+        .iter()
+        .map(|p| view.doc_to_screen(p.x, p.y))
+        .collect();
+    let stroke = Stroke::new(
+        (path.stroke_width * view.zoom).max(0.5),
+        hex32(&path.stroke_color),
+    );
     if path.closed {
         ui.painter().add(egui::Shape::closed_line(pts, stroke));
     } else {
@@ -485,7 +518,11 @@ fn draw_vector(ui: &mut egui::Ui, st: &mut AtelierState, view: &View) {
 
 fn draw_shape(ui: &mut egui::Ui, view: &View, shape: &VectorShape) {
     let fill = hex32(&shape.fill);
-    let stroke_col = if shape.stroke == "none" { Color32::TRANSPARENT } else { hex32(&shape.stroke) };
+    let stroke_col = if shape.stroke == "none" {
+        Color32::TRANSPARENT
+    } else {
+        hex32(&shape.stroke)
+    };
     let sw = (shape.stroke_width * view.zoom).max(0.0);
     let stroke = Stroke::new(sw, stroke_col);
     let r = view.doc_rect(shape.x, shape.y, shape.width, shape.height);
@@ -495,7 +532,8 @@ fn draw_shape(ui: &mut egui::Ui, view: &View, shape: &VectorShape) {
             let rad = shape.corner_radius.unwrap_or(0.0) * view.zoom;
             ui.painter().rect_filled(r, rad, fill);
             if sw > 0.0 {
-                ui.painter().rect_stroke(r, rad, stroke, egui::StrokeKind::Inside);
+                ui.painter()
+                    .rect_stroke(r, rad, stroke, egui::StrokeKind::Inside);
             }
         }
         ShapeKind::Ellipse => {
@@ -507,22 +545,28 @@ fn draw_shape(ui: &mut egui::Ui, view: &View, shape: &VectorShape) {
                     center + vec2(a.cos() * r.width() / 2.0, a.sin() * r.height() / 2.0)
                 })
                 .collect();
-            ui.painter().add(egui::Shape::convex_polygon(pts, fill, stroke));
+            ui.painter()
+                .add(egui::Shape::convex_polygon(pts, fill, stroke));
         }
         ShapeKind::Polygon => {
             let center = r.center();
             let n = 6;
             let pts: Vec<Pos2> = (0..n)
                 .map(|i| {
-                    let a = i as f32 / n as f32 * std::f32::consts::TAU - std::f32::consts::FRAC_PI_2;
+                    let a =
+                        i as f32 / n as f32 * std::f32::consts::TAU - std::f32::consts::FRAC_PI_2;
                     center + vec2(a.cos() * r.width() / 2.0, a.sin() * r.height() / 2.0)
                 })
                 .collect();
-            ui.painter().add(egui::Shape::convex_polygon(pts, fill, stroke));
+            ui.painter()
+                .add(egui::Shape::convex_polygon(pts, fill, stroke));
         }
         ShapeKind::Path => {
             if let Some(points) = &shape.points {
-                let pts: Vec<Pos2> = points.iter().map(|p| view.doc_to_screen(p.x, p.y)).collect();
+                let pts: Vec<Pos2> = points
+                    .iter()
+                    .map(|p| view.doc_to_screen(p.x, p.y))
+                    .collect();
                 if pts.len() >= 2 {
                     ui.painter().add(egui::Shape::line(pts, stroke));
                 }
@@ -594,7 +638,8 @@ fn draw_publish(ui: &mut egui::Ui, st: &AtelierState, view: &View, doc_rect: Rec
             .map(|f| hex32(f))
             .unwrap_or(fill);
         ui.painter().rect_filled(r, 0.0, frame_fill);
-        ui.painter().rect_stroke(r, 0.0, Stroke::new(1.0_f32, edge), egui::StrokeKind::Inside);
+        ui.painter()
+            .rect_stroke(r, 0.0, Stroke::new(1.0_f32, edge), egui::StrokeKind::Inside);
 
         if let Some(title) = &frame.title {
             ui.painter().with_clip_rect(r).text(
@@ -636,12 +681,18 @@ fn draw_grid(ui: &mut egui::Ui, st: &AtelierState, view: &View, doc_rect: Rect) 
     let c = hex32("#888888").gamma_multiply(0.15);
     let mut x = doc_rect.left();
     while x <= doc_rect.right() {
-        ui.painter().line_segment([pos2(x, doc_rect.top()), pos2(x, doc_rect.bottom())], Stroke::new(0.5_f32, c));
+        ui.painter().line_segment(
+            [pos2(x, doc_rect.top()), pos2(x, doc_rect.bottom())],
+            Stroke::new(0.5_f32, c),
+        );
         x += step;
     }
     let mut y = doc_rect.top();
     while y <= doc_rect.bottom() {
-        ui.painter().line_segment([pos2(doc_rect.left(), y), pos2(doc_rect.right(), y)], Stroke::new(0.5_f32, c));
+        ui.painter().line_segment(
+            [pos2(doc_rect.left(), y), pos2(doc_rect.right(), y)],
+            Stroke::new(0.5_f32, c),
+        );
         y += step;
     }
 }
@@ -657,9 +708,15 @@ fn draw_rulers(
 ) {
     let bg = hex32(theme_by_id(st.theme_id).bg_panel);
     let tick = hex32(text_muted);
-    let hr = Rect::from_min_max(available.min + vec2(ruler, 0.0), pos2(available.right(), available.top() + ruler));
+    let hr = Rect::from_min_max(
+        available.min + vec2(ruler, 0.0),
+        pos2(available.right(), available.top() + ruler),
+    );
     ui.painter().rect_filled(hr, 0.0, bg);
-    ui.painter().line_segment([hr.left_bottom(), hr.right_bottom()], Stroke::new(1.0_f32, hex32(border)));
+    ui.painter().line_segment(
+        [hr.left_bottom(), hr.right_bottom()],
+        Stroke::new(1.0_f32, hex32(border)),
+    );
     let step_px = 50.0 * view.zoom;
     if step_px > 24.0 {
         let start_doc = ((hr.left() - view.origin.x) / view.zoom / 50.0).floor() * 50.0;
@@ -667,23 +724,47 @@ fn draw_rulers(
         while view.doc_to_screen(doc_x, 0.0).x < hr.right() {
             let sx = view.doc_to_screen(doc_x, 0.0).x;
             if sx >= hr.left() {
-                ui.painter().line_segment([pos2(sx, hr.bottom() - 5.0), pos2(sx, hr.bottom())], Stroke::new(1.0_f32, tick));
-                ui.painter().text(pos2(sx + 2.0, hr.top() + 2.0), Align2::LEFT_TOP, format!("{}", doc_x as i32), FontId::monospace(8.0), tick);
+                ui.painter().line_segment(
+                    [pos2(sx, hr.bottom() - 5.0), pos2(sx, hr.bottom())],
+                    Stroke::new(1.0_f32, tick),
+                );
+                ui.painter().text(
+                    pos2(sx + 2.0, hr.top() + 2.0),
+                    Align2::LEFT_TOP,
+                    format!("{}", doc_x as i32),
+                    FontId::monospace(8.0),
+                    tick,
+                );
             }
             doc_x += 50.0;
         }
     }
-    let vr = Rect::from_min_max(available.min + vec2(0.0, ruler), pos2(available.left() + ruler, available.bottom()));
+    let vr = Rect::from_min_max(
+        available.min + vec2(0.0, ruler),
+        pos2(available.left() + ruler, available.bottom()),
+    );
     ui.painter().rect_filled(vr, 0.0, bg);
-    ui.painter().line_segment([vr.right_top(), vr.right_bottom()], Stroke::new(1.0_f32, hex32(border)));
+    ui.painter().line_segment(
+        [vr.right_top(), vr.right_bottom()],
+        Stroke::new(1.0_f32, hex32(border)),
+    );
     if step_px > 24.0 {
         let start_doc = ((vr.top() - view.origin.y) / view.zoom / 50.0).floor() * 50.0;
         let mut doc_y = start_doc;
         while view.doc_to_screen(0.0, doc_y).y < vr.bottom() {
             let sy = view.doc_to_screen(0.0, doc_y).y;
             if sy >= vr.top() {
-                ui.painter().line_segment([pos2(vr.right() - 5.0, sy), pos2(vr.right(), sy)], Stroke::new(1.0_f32, tick));
-                ui.painter().text(pos2(vr.left() + 2.0, sy + 2.0), Align2::LEFT_TOP, format!("{}", doc_y as i32), FontId::monospace(8.0), tick);
+                ui.painter().line_segment(
+                    [pos2(vr.right() - 5.0, sy), pos2(vr.right(), sy)],
+                    Stroke::new(1.0_f32, tick),
+                );
+                ui.painter().text(
+                    pos2(vr.left() + 2.0, sy + 2.0),
+                    Align2::LEFT_TOP,
+                    format!("{}", doc_y as i32),
+                    FontId::monospace(8.0),
+                    tick,
+                );
             }
             doc_y += 50.0;
         }
@@ -711,7 +792,8 @@ fn draw_selection(ui: &mut egui::Ui, st: &AtelierState, view: &View, ants_start:
                 ui.painter().line_segment([w[0], w[1]], ants2);
             }
             if screen.len() > 2 {
-                ui.painter().line_segment([*screen.last().unwrap(), screen[0]], ants2);
+                ui.painter()
+                    .line_segment([*screen.last().unwrap(), screen[0]], ants2);
             }
         }
     }
@@ -742,7 +824,8 @@ fn dashed_line(ui: &mut egui::Ui, a: Pos2, b: Pos2, offset: f32, stroke: Stroke)
         let start = t.max(0.0);
         let end = (t + DASH).min(len);
         if end > start {
-            ui.painter().line_segment([a + dir * start, a + dir * end], stroke);
+            ui.painter()
+                .line_segment([a + dir * start, a + dir * end], stroke);
         }
         t += DASH + GAP;
     }
@@ -754,15 +837,24 @@ fn draw_pen_preview(ui: &mut egui::Ui, st: &AtelierState, view: &View, accent: C
     if st.pen_path.is_empty() || st.persona != Persona::Vector {
         return;
     }
-    let pts: Vec<Pos2> = st.pen_path.iter().map(|p| view.doc_to_screen(p.x, p.y)).collect();
+    let pts: Vec<Pos2> = st
+        .pen_path
+        .iter()
+        .map(|p| view.doc_to_screen(p.x, p.y))
+        .collect();
     if pts.len() >= 2 {
-        ui.painter().add(egui::Shape::line(pts.clone(), Stroke::new(1.5_f32, accent)));
+        ui.painter()
+            .add(egui::Shape::line(pts.clone(), Stroke::new(1.5_f32, accent)));
     }
     if let Some(hover) = ui.input(|i| i.pointer.hover_pos()) {
-        ui.painter().line_segment([*pts.last().unwrap(), hover], Stroke::new(1.0_f32, accent.gamma_multiply(0.5)));
+        ui.painter().line_segment(
+            [*pts.last().unwrap(), hover],
+            Stroke::new(1.0_f32, accent.gamma_multiply(0.5)),
+        );
     }
     for p in &pts {
-        ui.painter().rect_filled(Rect::from_center_size(*p, vec2(6.0, 6.0)), 1.0, accent);
+        ui.painter()
+            .rect_filled(Rect::from_center_size(*p, vec2(6.0, 6.0)), 1.0, accent);
     }
 }
 
@@ -774,13 +866,25 @@ fn draw_node_handles(ui: &mut egui::Ui, st: &AtelierState, view: &View, accent: 
         if !st.selected_shape_ids.contains(&shape.id) {
             continue;
         }
-        let Some(points) = &shape.points else { continue };
+        let Some(points) = &shape.points else {
+            continue;
+        };
         for (i, p) in points.iter().enumerate() {
             let s = view.doc_to_screen(p.x, p.y);
             let r = Rect::from_center_size(s, vec2(8.0, 8.0));
-            let active = st.editing_node.as_ref().map(|(id, n)| id == &shape.id && *n == i).unwrap_or(false);
-            ui.painter().rect_filled(r, 1.0, if active { accent } else { Color32::WHITE });
-            ui.painter().rect_stroke(r, 1.0, Stroke::new(1.0_f32, accent), egui::StrokeKind::Inside);
+            let active = st
+                .editing_node
+                .as_ref()
+                .map(|(id, n)| id == &shape.id && *n == i)
+                .unwrap_or(false);
+            ui.painter()
+                .rect_filled(r, 1.0, if active { accent } else { Color32::WHITE });
+            ui.painter().rect_stroke(
+                r,
+                1.0,
+                Stroke::new(1.0_f32, accent),
+                egui::StrokeKind::Inside,
+            );
         }
     }
 }
@@ -797,7 +901,9 @@ fn handle_tools(
     canvas_rect: Rect,
     accent: Color32,
 ) {
-    let press_pos = response.interact_pointer_pos().or_else(|| response.hover_pos());
+    let press_pos = response
+        .interact_pointer_pos()
+        .or_else(|| response.hover_pos());
     let doc_pt = press_pos.map(|p| view.screen_to_doc(p));
 
     match st.persona {
@@ -841,7 +947,10 @@ fn photo_tools(
     let (doc_w, doc_h) = (st.project.width, st.project.height);
 
     // -- Painting tools (brush / eraser / healing-clone / dodge-burn) --
-    let is_paint = matches!(tool, ToolId::Brush | ToolId::Eraser | ToolId::Healing | ToolId::Dodge | ToolId::Burn);
+    let is_paint = matches!(
+        tool,
+        ToolId::Brush | ToolId::Eraser | ToolId::Healing | ToolId::Dodge | ToolId::Burn
+    );
 
     if is_paint {
         if tool == ToolId::Healing && response.clicked() && ui.input(|i| i.modifiers.alt) {
@@ -876,16 +985,52 @@ fn photo_tools(
                     let layer = st.project.layers[idx].clone();
                     let buf = eng.store.ensure(&layer, w, h);
                     match tool {
-                        ToolId::Eraser => raster::paint_stroke(buf, prev, from, radius, o.brush_hardness, [0, 0, 0], alpha, sel, true),
+                        ToolId::Eraser => raster::paint_stroke(
+                            buf,
+                            prev,
+                            from,
+                            radius,
+                            o.brush_hardness,
+                            [0, 0, 0],
+                            alpha,
+                            sel,
+                            true,
+                        ),
                         ToolId::Healing => {
                             let src = st.clone_source.unwrap_or(prev);
                             let off = (src.0 - prev.0, src.1 - prev.1);
-                            raster::clone_stroke(buf, off, prev, from, radius, o.brush_hardness, sel);
+                            raster::clone_stroke(
+                                buf,
+                                off,
+                                prev,
+                                from,
+                                radius,
+                                o.brush_hardness,
+                                sel,
+                            );
                         }
                         ToolId::Dodge | ToolId::Burn => {
-                            raster::dodge_burn_stroke(buf, prev, from, radius, alpha, tool == ToolId::Dodge, sel);
+                            raster::dodge_burn_stroke(
+                                buf,
+                                prev,
+                                from,
+                                radius,
+                                alpha,
+                                tool == ToolId::Dodge,
+                                sel,
+                            );
                         }
-                        _ => raster::paint_stroke(buf, prev, from, radius, o.brush_hardness, color, alpha, sel, false),
+                        _ => raster::paint_stroke(
+                            buf,
+                            prev,
+                            from,
+                            radius,
+                            o.brush_hardness,
+                            color,
+                            alpha,
+                            sel,
+                            false,
+                        ),
                     }
                     eng.stroke_last = Some(from);
                     st.raster_version += 1;
@@ -940,8 +1085,13 @@ fn photo_tools(
                     eng.lasso_pts.push(pos2(d.x, d.y));
                 }
                 if eng.lasso_pts.len() > 1 {
-                    let pts: Vec<Pos2> = eng.lasso_pts.iter().map(|p| view.doc_to_screen(p.x, p.y)).collect();
-                    ui.painter().add(egui::Shape::line(pts, Stroke::new(1.0_f32, Color32::WHITE)));
+                    let pts: Vec<Pos2> = eng
+                        .lasso_pts
+                        .iter()
+                        .map(|p| view.doc_to_screen(p.x, p.y))
+                        .collect();
+                    ui.painter()
+                        .add(egui::Shape::line(pts, Stroke::new(1.0_f32, Color32::WHITE)));
                 }
             }
             if response.drag_stopped() && eng.lasso_pts.len() > 2 {
@@ -971,7 +1121,12 @@ fn photo_tools(
                     let (x2, y2) = (da.x.max(db.x).min(doc_w), da.y.max(db.y).min(doc_h));
                     if x2 - x > 8.0 && y2 - y > 8.0 {
                         st.apply_crop(x, y, x2 - x, y2 - y);
-                        eng.store.gc(&st.project.layers.iter().map(|l| l.id.clone()).collect::<Vec<_>>());
+                        eng.store.gc(&st
+                            .project
+                            .layers
+                            .iter()
+                            .map(|l| l.id.clone())
+                            .collect::<Vec<_>>());
                     }
                 }
                 set_drag_start(ui, None);
@@ -992,9 +1147,20 @@ fn photo_tools(
                         let fg = hex32(&st.foreground_color);
                         let alt = ui.input(|i| i.modifiers.alt);
                         if alt {
-                            raster::fill_all(buf, [fg.r(), fg.g(), fg.b(), 255], st.selection.as_ref());
+                            raster::fill_all(
+                                buf,
+                                [fg.r(), fg.g(), fg.b(), 255],
+                                st.selection.as_ref(),
+                            );
                         } else {
-                            raster::flood_fill(buf, d.x as i32, d.y as i32, [fg.r(), fg.g(), fg.b(), 255], 24, st.selection.as_ref());
+                            raster::flood_fill(
+                                buf,
+                                d.x as i32,
+                                d.y as i32,
+                                [fg.r(), fg.g(), fg.b(), 255],
+                                24,
+                                st.selection.as_ref(),
+                            );
                         }
                         st.raster_version += 1;
                         eng.stroke_target = Some(tid.clone());
@@ -1009,7 +1175,8 @@ fn photo_tools(
             }
             if response.dragged() {
                 if let (Some(a), Some(b)) = (get_drag_start(ui), press_pos(response)) {
-                    ui.painter().line_segment([a, b], Stroke::new(1.5_f32, hex32("#0d99ff")));
+                    ui.painter()
+                        .line_segment([a, b], Stroke::new(1.5_f32, hex32("#0d99ff")));
                 }
             }
             if response.drag_stopped() {
@@ -1047,7 +1214,10 @@ fn photo_tools(
             if response.clicked() {
                 if let Some(d) = doc_pt {
                     if let Some((_, buf)) = eng.composite(&ui.ctx().clone(), st) {
-                        let (x, y) = (d.x.clamp(0.0, doc_w - 1.0) as u32, d.y.clamp(0.0, doc_h - 1.0) as u32);
+                        let (x, y) = (
+                            d.x.clamp(0.0, doc_w - 1.0) as u32,
+                            d.y.clamp(0.0, doc_h - 1.0) as u32,
+                        );
                         let p = *buf.get_pixel(x, y);
                         // Composite over white paper for transparent areas.
                         let a = p[3] as f32 / 255.0;
@@ -1089,7 +1259,9 @@ fn photo_tools(
 }
 
 fn press_pos(response: &egui::Response) -> Option<Pos2> {
-    response.interact_pointer_pos().or_else(|| response.hover_pos())
+    response
+        .interact_pointer_pos()
+        .or_else(|| response.hover_pos())
 }
 
 /// Encode the edited buffer back into the layer (for .szt + history) and
@@ -1132,7 +1304,11 @@ fn vector_tools(
         ToolId::Pen => {
             if response.clicked() {
                 if let Some(d) = doc_pt {
-                    st.pen_path.push(VectorPoint { x: d.x, y: d.y, ..Default::default() });
+                    st.pen_path.push(VectorPoint {
+                        x: d.x,
+                        y: d.y,
+                        ..Default::default()
+                    });
                 }
             }
             if response.double_clicked() {
@@ -1147,7 +1323,12 @@ fn vector_tools(
                         .vector_shapes
                         .iter()
                         .rev()
-                        .find(|s| d.x >= s.x && d.x <= s.x + s.width && d.y >= s.y && d.y <= s.y + s.height)
+                        .find(|s| {
+                            d.x >= s.x
+                                && d.x <= s.x + s.width
+                                && d.y >= s.y
+                                && d.y <= s.y + s.height
+                        })
                         .map(|s| s.id.clone());
                     match hit {
                         Some(id) => {
@@ -1206,8 +1387,12 @@ fn vector_tools(
                                 p.y = d.y;
                             }
                             // Recompute bbox.
-                            let (mut x0, mut y0, mut x1, mut y1) =
-                                (f32::INFINITY, f32::INFINITY, f32::NEG_INFINITY, f32::NEG_INFINITY);
+                            let (mut x0, mut y0, mut x1, mut y1) = (
+                                f32::INFINITY,
+                                f32::INFINITY,
+                                f32::NEG_INFINITY,
+                                f32::NEG_INFINITY,
+                            );
                             for p in points.iter() {
                                 x0 = x0.min(p.x);
                                 y0 = y0.min(p.y);
@@ -1229,18 +1414,28 @@ fn vector_tools(
         }
         _ => {
             // Shape creation tools (rect/ellipse/polygon) — shared drag-create.
-            let creation = matches!(st.active_tool, ToolId::ShapeRect | ToolId::ShapeEllipse | ToolId::ShapePolygon);
+            let creation = matches!(
+                st.active_tool,
+                ToolId::ShapeRect | ToolId::ShapeEllipse | ToolId::ShapePolygon
+            );
             if creation {
                 if response.drag_started() {
                     set_drag_start(ui, response.interact_pointer_pos());
                 }
                 if response.dragged() {
                     if let (Some(a), Some(b)) = (get_drag_start(ui), press_pos(response)) {
-                        ui.painter().rect_stroke(Rect::from_two_pos(a, b), 0.0, Stroke::new(1.0_f32, accent), egui::StrokeKind::Inside);
+                        ui.painter().rect_stroke(
+                            Rect::from_two_pos(a, b),
+                            0.0,
+                            Stroke::new(1.0_f32, accent),
+                            egui::StrokeKind::Inside,
+                        );
                     }
                 }
                 if response.drag_stopped() {
-                    if let (Some(a), Some(b)) = (get_drag_start(ui), response.interact_pointer_pos()) {
+                    if let (Some(a), Some(b)) =
+                        (get_drag_start(ui), response.interact_pointer_pos())
+                    {
                         let da = view.screen_to_doc(a);
                         let db = view.screen_to_doc(b);
                         let (x, y) = (da.x.min(db.x), da.y.min(db.y));
@@ -1270,8 +1465,12 @@ fn vector_tools(
 
 /// Snap the drag delta so the selection bbox edges land on guides/doc bounds.
 fn snap_delta(st: &AtelierState, delta: Vec2) -> Vec2 {
-    let (mut min_x, mut min_y, mut max_x, mut max_y) =
-        (f32::INFINITY, f32::INFINITY, f32::NEG_INFINITY, f32::NEG_INFINITY);
+    let (mut min_x, mut min_y, mut max_x, mut max_y) = (
+        f32::INFINITY,
+        f32::INFINITY,
+        f32::NEG_INFINITY,
+        f32::NEG_INFINITY,
+    );
     let mut any = false;
     for s in &st.vector_shapes {
         if st.selected_shape_ids.contains(&s.id) {
@@ -1285,30 +1484,65 @@ fn snap_delta(st: &AtelierState, delta: Vec2) -> Vec2 {
     if !any {
         return Vec2::ZERO;
     }
-    let (min_x, min_y, max_x, max_y) = (min_x + delta.x, min_y + delta.y, max_x + delta.x, max_y + delta.y);
+    let (min_x, min_y, max_x, max_y) = (
+        min_x + delta.x,
+        min_y + delta.y,
+        max_x + delta.x,
+        max_y + delta.y,
+    );
     let mid_x = (min_x + max_x) / 2.0;
     let mid_y = (min_y + max_y) / 2.0;
     let tol = st.snapping.tolerance;
     let (mut cx, mut cy) = (0.0f32, 0.0f32);
 
     let snap = |v: f32, targets: &mut dyn Iterator<Item = f32>, tol: f32| -> Option<f32> {
-        targets.map(|t| (t - v, (t - v).abs())).filter(|(_, d)| *d <= tol).min_by(|a, b| a.1.partial_cmp(&b.1).unwrap()).map(|(d, _)| d)
+        targets
+            .map(|t| (t - v, (t - v).abs()))
+            .filter(|(_, d)| *d <= tol)
+            .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
+            .map(|(d, _)| d)
     };
 
     if st.snapping.snap_to_doc_bounds {
         let mut targets = [0.0, st.project.width / 2.0, st.project.width].into_iter();
         cx = snap(min_x, &mut targets, tol)
-            .or_else(|| snap(max_x, &mut [0.0, st.project.width / 2.0, st.project.width].into_iter(), tol))
+            .or_else(|| {
+                snap(
+                    max_x,
+                    &mut [0.0, st.project.width / 2.0, st.project.width].into_iter(),
+                    tol,
+                )
+            })
             .or_else(|| snap(mid_x, &mut [st.project.width / 2.0].into_iter(), tol))
             .unwrap_or(0.0);
-        cy = snap(min_y, &mut [0.0, st.project.height / 2.0, st.project.height].into_iter(), tol)
-            .or_else(|| snap(max_y, &mut [0.0, st.project.height / 2.0, st.project.height].into_iter(), tol))
-            .or_else(|| snap(mid_y, &mut [st.project.height / 2.0].into_iter(), tol))
-            .unwrap_or(0.0);
+        cy = snap(
+            min_y,
+            &mut [0.0, st.project.height / 2.0, st.project.height].into_iter(),
+            tol,
+        )
+        .or_else(|| {
+            snap(
+                max_y,
+                &mut [0.0, st.project.height / 2.0, st.project.height].into_iter(),
+                tol,
+            )
+        })
+        .or_else(|| snap(mid_y, &mut [st.project.height / 2.0].into_iter(), tol))
+        .unwrap_or(0.0);
     }
     if st.snapping.snap_to_guides {
-        let vert: Vec<f32> = st.guides.iter().filter(|g| g.kind == GuideKind::Vertical).map(|g| g.position).collect();
-        let horiz: Vec<f32> = st.guides.iter().filter(|g| g.kind == GuideKind::Horizontal).map(|g| g.position).collect();
+        let vert: Vec<f32> = st
+            .guides
+            .iter()
+            .filter(|g| g.kind == GuideKind::Vertical)
+            .map(|g| g.position)
+            .collect();
+        let horiz: Vec<f32> = st
+            .guides
+            .iter()
+            .filter(|g| g.kind == GuideKind::Horizontal)
+            .map(|g| g.position)
+            .collect();
         if cx == 0.0 {
             cx = snap(min_x, &mut vert.iter().copied(), tol)
                 .or_else(|| snap(max_x, &mut vert.iter().copied(), tol))
@@ -1348,7 +1582,12 @@ fn publish_tools(
                         .publish_frames
                         .iter()
                         .rev()
-                        .find(|f| d.x >= f.x && d.x <= f.x + f.width && d.y >= f.y && d.y <= f.y + f.height)
+                        .find(|f| {
+                            d.x >= f.x
+                                && d.x <= f.x + f.width
+                                && d.y >= f.y
+                                && d.y <= f.y + f.height
+                        })
                         .map(|f| f.id.clone());
                     match hit {
                         Some(id) => st.selected_frame_ids = vec![id],
@@ -1375,7 +1614,12 @@ fn publish_tools(
             }
             if response.dragged() {
                 if let (Some(a), Some(b)) = (get_drag_start(ui), press_pos(response)) {
-                    ui.painter().rect_stroke(Rect::from_two_pos(a, b), 0.0, Stroke::new(1.0_f32, accent), egui::StrokeKind::Inside);
+                    ui.painter().rect_stroke(
+                        Rect::from_two_pos(a, b),
+                        0.0,
+                        Stroke::new(1.0_f32, accent),
+                        egui::StrokeKind::Inside,
+                    );
                 }
             }
             if response.drag_stopped() {

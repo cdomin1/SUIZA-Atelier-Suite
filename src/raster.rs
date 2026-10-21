@@ -12,7 +12,9 @@ pub struct RasterStore {
 
 impl RasterStore {
     pub fn new() -> Self {
-        Self { buffers: HashMap::new() }
+        Self {
+            buffers: HashMap::new(),
+        }
     }
 
     /// Get (or lazily create) a layer's pixel buffer.
@@ -48,9 +50,7 @@ pub enum Selection {
 impl Selection {
     pub fn contains(&self, x: f32, y: f32) -> bool {
         match self {
-            Selection::Rect(rx, ry, rw, rh) => {
-                x >= *rx && x <= rx + rw && y >= *ry && y <= ry + rh
-            }
+            Selection::Rect(rx, ry, rw, rh) => x >= *rx && x <= rx + rw && y >= *ry && y <= ry + rh,
             Selection::Poly(pts) => point_in_poly(pts, x, y),
         }
     }
@@ -60,8 +60,12 @@ impl Selection {
         match self {
             Selection::Rect(x, y, w, h) => (*x, *y, *x + w, *y + h),
             Selection::Poly(pts) => {
-                let (mut x0, mut y0, mut x1, mut y1) =
-                    (f32::INFINITY, f32::INFINITY, f32::NEG_INFINITY, f32::NEG_INFINITY);
+                let (mut x0, mut y0, mut x1, mut y1) = (
+                    f32::INFINITY,
+                    f32::INFINITY,
+                    f32::NEG_INFINITY,
+                    f32::NEG_INFINITY,
+                );
                 for p in pts {
                     x0 = x0.min(p.x);
                     y0 = y0.min(p.y);
@@ -153,7 +157,10 @@ fn blend_normal(dst: &mut image::Rgba<u8>, src: [u8; 3], src_alpha: f32) {
         return;
     }
     for c in 0..3 {
-        dst[c] = ((src[c] as f32 / 255.0 * src_alpha + dst[c] as f32 / 255.0 * da * (1.0 - src_alpha)) / a * 255.0)
+        dst[c] = ((src[c] as f32 / 255.0 * src_alpha
+            + dst[c] as f32 / 255.0 * da * (1.0 - src_alpha))
+            / a
+            * 255.0)
             .clamp(0.0, 255.0) as u8;
     }
     dst[3] = (a * 255.0).clamp(0.0, 255.0) as u8;
@@ -417,22 +424,36 @@ fn blend_channel(mode: BlendMode, s: f32, d: f32) -> f32 {
         BlendMode::Multiply => s * d,
         BlendMode::Screen => s + d - s * d,
         BlendMode::Overlay => {
-            if d < 0.5 { 2.0 * s * d } else { 1.0 - 2.0 * (1.0 - s) * (1.0 - d) }
+            if d < 0.5 {
+                2.0 * s * d
+            } else {
+                1.0 - 2.0 * (1.0 - s) * (1.0 - d)
+            }
         }
         BlendMode::Darken => s.min(d),
         BlendMode::Lighten => s.max(d),
         BlendMode::ColorDodge => {
-            if s >= 1.0 { 1.0 } else { (d / (1.0 - s)).min(1.0) }
+            if s >= 1.0 {
+                1.0
+            } else {
+                (d / (1.0 - s)).min(1.0)
+            }
         }
         BlendMode::ColorBurn => {
-            if s <= 0.0 { 0.0 } else { 1.0 - ((1.0 - d) / s).min(1.0) }
+            if s <= 0.0 {
+                0.0
+            } else {
+                1.0 - ((1.0 - d) / s).min(1.0)
+            }
         }
         BlendMode::HardLight => {
-            if s < 0.5 { 2.0 * s * d } else { 1.0 - 2.0 * (1.0 - s) * (1.0 - d) }
+            if s < 0.5 {
+                2.0 * s * d
+            } else {
+                1.0 - 2.0 * (1.0 - s) * (1.0 - d)
+            }
         }
-        BlendMode::SoftLight => {
-            (1.0 - 2.0 * s) * d * d + 2.0 * s * d
-        }
+        BlendMode::SoftLight => (1.0 - 2.0 * s) * d * d + 2.0 * s * d,
         BlendMode::Difference => (d - s).abs(),
         BlendMode::Exclusion => d + s - 2.0 * d * s,
     }
@@ -528,12 +549,7 @@ fn apply_adjustment(buf: &mut RgbaImage, layer: &Layer) {
 
 /// Composite all visible layers bottom-to-top into a display buffer.
 /// Text layers are skipped (rendered by the UI on top).
-pub fn composite(
-    layers: &[Layer],
-    store: &mut RasterStore,
-    w: u32,
-    h: u32,
-) -> RgbaImage {
+pub fn composite(layers: &[Layer], store: &mut RasterStore, w: u32, h: u32) -> RgbaImage {
     let mut acc = RgbaImage::from_pixel(w, h, image::Rgba([0, 0, 0, 0]));
     for layer in layers {
         if !layer.visible {

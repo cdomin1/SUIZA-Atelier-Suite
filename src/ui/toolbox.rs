@@ -14,51 +14,191 @@ pub struct ToolDef {
 
 fn photo_tools() -> &'static [ToolDef] {
     &[
-        ToolDef { id: ToolId::Move, name: "Move / Selection", key: "V" },
-        ToolDef { id: ToolId::Marquee, name: "Rectangular Marquee", key: "M" },
-        ToolDef { id: ToolId::Crop, name: "Crop Canvas", key: "C" },
-        ToolDef { id: ToolId::Eyedropper, name: "Eyedropper Sampler", key: "I" },
-        ToolDef { id: ToolId::Healing, name: "Spot Healing Brush", key: "J" },
-        ToolDef { id: ToolId::Brush, name: "Paint Brush Tool", key: "B" },
-        ToolDef { id: ToolId::Eraser, name: "Eraser Tool", key: "E" },
-        ToolDef { id: ToolId::Bucket, name: "Paint Bucket Tool", key: "G" },
-        ToolDef { id: ToolId::Dodge, name: "Dodge / Burn Exposure", key: "O" },
-        ToolDef { id: ToolId::Pen, name: "Pen Tool (Bezier Paths)", key: "P" },
-        ToolDef { id: ToolId::Text, name: "Horizontal Type Tool", key: "T" },
-        ToolDef { id: ToolId::Hand, name: "Hand Pan Tool", key: "H" },
-        ToolDef { id: ToolId::Zoom, name: "Zoom Tool", key: "Z" },
+        ToolDef {
+            id: ToolId::Move,
+            name: "Move / Selection",
+            key: "V",
+        },
+        ToolDef {
+            id: ToolId::Marquee,
+            name: "Rectangular Marquee",
+            key: "M",
+        },
+        ToolDef {
+            id: ToolId::Crop,
+            name: "Crop Canvas",
+            key: "C",
+        },
+        ToolDef {
+            id: ToolId::Eyedropper,
+            name: "Eyedropper Sampler",
+            key: "I",
+        },
+        ToolDef {
+            id: ToolId::Healing,
+            name: "Spot Healing Brush",
+            key: "J",
+        },
+        ToolDef {
+            id: ToolId::Brush,
+            name: "Paint Brush Tool",
+            key: "B",
+        },
+        ToolDef {
+            id: ToolId::Eraser,
+            name: "Eraser Tool",
+            key: "E",
+        },
+        ToolDef {
+            id: ToolId::Bucket,
+            name: "Paint Bucket Tool",
+            key: "G",
+        },
+        ToolDef {
+            id: ToolId::Dodge,
+            name: "Dodge / Burn Exposure",
+            key: "O",
+        },
+        ToolDef {
+            id: ToolId::Pen,
+            name: "Pen Tool (Bezier Paths)",
+            key: "P",
+        },
+        ToolDef {
+            id: ToolId::Text,
+            name: "Horizontal Type Tool",
+            key: "T",
+        },
+        ToolDef {
+            id: ToolId::Hand,
+            name: "Hand Pan Tool",
+            key: "H",
+        },
+        ToolDef {
+            id: ToolId::Zoom,
+            name: "Zoom Tool",
+            key: "Z",
+        },
     ]
 }
 
 fn vector_tools() -> &'static [ToolDef] {
     &[
-        ToolDef { id: ToolId::Move, name: "Selection Tool", key: "V" },
-        ToolDef { id: ToolId::DirectSelect, name: "Direct Selection (Nodes)", key: "A" },
-        ToolDef { id: ToolId::Pen, name: "Bezier Pen Spline", key: "P" },
-        ToolDef { id: ToolId::ShapeRect, name: "Rectangle Tool", key: "M" },
-        ToolDef { id: ToolId::ShapeEllipse, name: "Ellipse Tool", key: "L" },
-        ToolDef { id: ToolId::ShapePolygon, name: "Polygon / Star Tool", key: "Y" },
-        ToolDef { id: ToolId::ShapeBuilder, name: "Shape Builder (Pathfinder)", key: "S+M" },
-        ToolDef { id: ToolId::Knife, name: "Knife / Cut Paths", key: "C" },
-        ToolDef { id: ToolId::Text, name: "Vector Type Tool", key: "T" },
-        ToolDef { id: ToolId::Eyedropper, name: "Eyedropper Sampler", key: "I" },
-        ToolDef { id: ToolId::Hand, name: "Hand Pan Tool", key: "H" },
-        ToolDef { id: ToolId::Zoom, name: "Zoom Tool", key: "Z" },
+        ToolDef {
+            id: ToolId::Move,
+            name: "Selection Tool",
+            key: "V",
+        },
+        ToolDef {
+            id: ToolId::DirectSelect,
+            name: "Direct Selection (Nodes)",
+            key: "A",
+        },
+        ToolDef {
+            id: ToolId::Pen,
+            name: "Bezier Pen Spline",
+            key: "P",
+        },
+        ToolDef {
+            id: ToolId::ShapeRect,
+            name: "Rectangle Tool",
+            key: "M",
+        },
+        ToolDef {
+            id: ToolId::ShapeEllipse,
+            name: "Ellipse Tool",
+            key: "L",
+        },
+        ToolDef {
+            id: ToolId::ShapePolygon,
+            name: "Polygon / Star Tool",
+            key: "Y",
+        },
+        ToolDef {
+            id: ToolId::ShapeBuilder,
+            name: "Shape Builder (Pathfinder)",
+            key: "S+M",
+        },
+        ToolDef {
+            id: ToolId::Knife,
+            name: "Knife / Cut Paths",
+            key: "C",
+        },
+        ToolDef {
+            id: ToolId::Text,
+            name: "Vector Type Tool",
+            key: "T",
+        },
+        ToolDef {
+            id: ToolId::Eyedropper,
+            name: "Eyedropper Sampler",
+            key: "I",
+        },
+        ToolDef {
+            id: ToolId::Hand,
+            name: "Hand Pan Tool",
+            key: "H",
+        },
+        ToolDef {
+            id: ToolId::Zoom,
+            name: "Zoom Tool",
+            key: "Z",
+        },
     ]
 }
 
 fn publish_tools() -> &'static [ToolDef] {
     &[
-        ToolDef { id: ToolId::Move, name: "Selection Tool", key: "V" },
-        ToolDef { id: ToolId::DirectSelect, name: "Direct Selection", key: "A" },
-        ToolDef { id: ToolId::FrameText, name: "Type Text Frame Tool", key: "T" },
-        ToolDef { id: ToolId::FramePicture, name: "Graphic Picture Frame", key: "F" },
-        ToolDef { id: ToolId::FrameShape, name: "Rectangle Frame", key: "M" },
-        ToolDef { id: ToolId::LineTool, name: "Editorial Rule / Line Tool", key: "\\" },
-        ToolDef { id: ToolId::PageTool, name: "Page Layout Tool", key: "S+P" },
-        ToolDef { id: ToolId::Eyedropper, name: "Eyedropper Sampler", key: "I" },
-        ToolDef { id: ToolId::Hand, name: "Hand Pan Tool", key: "H" },
-        ToolDef { id: ToolId::Zoom, name: "Zoom Tool", key: "Z" },
+        ToolDef {
+            id: ToolId::Move,
+            name: "Selection Tool",
+            key: "V",
+        },
+        ToolDef {
+            id: ToolId::DirectSelect,
+            name: "Direct Selection",
+            key: "A",
+        },
+        ToolDef {
+            id: ToolId::FrameText,
+            name: "Type Text Frame Tool",
+            key: "T",
+        },
+        ToolDef {
+            id: ToolId::FramePicture,
+            name: "Graphic Picture Frame",
+            key: "F",
+        },
+        ToolDef {
+            id: ToolId::FrameShape,
+            name: "Rectangle Frame",
+            key: "M",
+        },
+        ToolDef {
+            id: ToolId::LineTool,
+            name: "Editorial Rule / Line Tool",
+            key: "\\",
+        },
+        ToolDef {
+            id: ToolId::PageTool,
+            name: "Page Layout Tool",
+            key: "S+P",
+        },
+        ToolDef {
+            id: ToolId::Eyedropper,
+            name: "Eyedropper Sampler",
+            key: "I",
+        },
+        ToolDef {
+            id: ToolId::Hand,
+            name: "Hand Pan Tool",
+            key: "H",
+        },
+        ToolDef {
+            id: ToolId::Zoom,
+            name: "Zoom Tool",
+            key: "Z",
+        },
     ]
 }
 
@@ -105,11 +245,19 @@ pub fn toolbox(ui: &mut egui::Ui, st: &mut AtelierState) {
         let mut bg = hex32(&st.background_color);
 
         ui.horizontal(|ui| {
-            if ui.small_button("D").on_hover_text("Default Colors: Black & White (D)").clicked() {
+            if ui
+                .small_button("D")
+                .on_hover_text("Default Colors: Black & White (D)")
+                .clicked()
+            {
                 st.reset_colors();
                 st.hint("Reset Black & White (D)");
             }
-            if ui.small_button("X").on_hover_text("Swap Foreground/Background (X)").clicked() {
+            if ui
+                .small_button("X")
+                .on_hover_text("Swap Foreground/Background (X)")
+                .clicked()
+            {
                 st.swap_colors();
                 st.hint("Swapped Colors (X)");
             }
@@ -120,9 +268,19 @@ pub fn toolbox(ui: &mut egui::Ui, st: &mut AtelierState) {
         let bg_rect = Rect::from_min_size(rect.min + Vec2::new(9.0, 9.0), Vec2::new(20.0, 20.0));
         let fg_rect = Rect::from_min_size(rect.min, Vec2::new(20.0, 20.0));
         ui.painter().rect_filled(bg_rect, 2.0, bg);
-        ui.painter().rect_stroke(bg_rect, 2.0, egui::Stroke::new(1.0_f32, hex32(theme.border_strong)), egui::StrokeKind::Inside);
+        ui.painter().rect_stroke(
+            bg_rect,
+            2.0,
+            egui::Stroke::new(1.0_f32, hex32(theme.border_strong)),
+            egui::StrokeKind::Inside,
+        );
         ui.painter().rect_filled(fg_rect, 2.0, fg);
-        ui.painter().rect_stroke(fg_rect, 2.0, egui::Stroke::new(1.5_f32, Color32::WHITE), egui::StrokeKind::Inside);
+        ui.painter().rect_stroke(
+            fg_rect,
+            2.0,
+            egui::Stroke::new(1.5_f32, Color32::WHITE),
+            egui::StrokeKind::Inside,
+        );
         let _ = Pos2::ZERO; // silence unused import in some cfgs
 
         ui.label(RichText::new("FG").size(8.0).color(text_dim));

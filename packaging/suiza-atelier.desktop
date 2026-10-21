@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=SUIZA Atelier Suite
+Comment=Creative suite — photo retouching, vector illustration, desktop publishing
+Exec=suiza-atelier %f
+Icon=suiza-atelier
+Terminal=false
+Categories=Graphics;RasterGraphics;VectorGraphics;Office;
+MimeType=application/x-suiza-szt;

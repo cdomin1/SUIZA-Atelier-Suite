@@ -1,0 +1,123 @@
+name: Release packages
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version label for artifacts (e.g. 0.1.0-alpha.2)'
+        required: true
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-apple-darwin
+      - name: Build universal DMG
+        run: scripts/bundle-dmg.sh universal
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-dmg
+          path: |
+            dist/*.dmg
+            dist/*.dmg.sha256
+          if-no-files-found: error
+
+  appimage:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: sudo apt-get update && sudo apt-get install -y libxkbcommon-dev libxkbcommon-x11-dev libwayland-dev libx11-dev libxi-dev libxcursor-dev libxrandr-dev libxinerama-dev libgl1-mesa-dev libegl1-mesa-dev libfuse2 patchelf desktop-file-utils
+      - name: Download packaging tools
+        run: |
+          mkdir -p "$RUNNER_TEMP/tools"
+          curl -fL --retry 3 https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage -o "$RUNNER_TEMP/tools/linuxdeploy.AppImage"
+          curl -fL --retry 3 https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage -o "$RUNNER_TEMP/tools/appimagetool.AppImage"
+          chmod +x "$RUNNER_TEMP/tools/"*.AppImage
+      - name: Build AppImage
+        env:
+          CARGO_BUILD_JOBS: '2'
+          LINUXDEPLOY: ${{ runner.temp }}/tools/linuxdeploy.AppImage
+          APPIMAGETOOL: ${{ runner.temp }}/tools/appimagetool.AppImage
+        run: |
+          ver="${{ github.event.inputs.version || github.ref_name }}"
+          scripts/bundle-appimage.sh "${ver#v}"
+      - name: Check AppImage
+        run: |
+          image=$(realpath dist/*.AppImage)
+          mkdir -p "$RUNNER_TEMP/appimage-check"
+          cd "$RUNNER_TEMP/appimage-check"
+          "$image" --appimage-extract > /dev/null
+          test -x squashfs-root/usr/bin/suiza-atelier
+          file squashfs-root/usr/bin/suiza-atelier | grep -q 'ELF 64-bit'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-appimage
+          path: dist/*.AppImage
+          if-no-files-found: error
+
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Build and package
+        shell: bash
+        run: scripts/bundle-windows.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-zip
+          path: dist/*.zip
+          if-no-files-found: error
+
+  publish:
+    needs: [macos, appimage, windows]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Publish alpha release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd dist
+          sha256sum * > SHA256SUMS
+          cat > NOTES.md <<'EOF'
+          ## SUIZA Atelier Suite ${{ github.ref_name }} — Alpha
+
+          | Platform | Package |
+          |---|---|
+          | macOS (Apple Silicon + Intel, universal) | `SUIZA-Atelier-Suite-*-macOS-universal.dmg` |
+          | Linux x86_64 | `SUIZA-Atelier-Suite-*-x86_64.AppImage` |
+          | Windows x86_64 | `SUIZA-Atelier-Suite-*-Windows-x86_64.zip` |
+
+          **Alpha builds are unsigned/unnotarized.**
+          - macOS: right-click → Open, or `xattr -dr com.apple.quarantine` on the app.
+          - Windows: SmartScreen may warn — More info → Run anyway.
+
+          Verify downloads against `SHA256SUMS`.
+          EOF
+          gh release create "$GITHUB_REF_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            --verify-tag \
+            --prerelease \
+            --title "SUIZA Atelier Suite ${GITHUB_REF_NAME#v} · Alpha" \
+            --notes-file NOTES.md \
+            *.dmg *.dmg.sha256 *.AppImage *.zip SHA256SUMS

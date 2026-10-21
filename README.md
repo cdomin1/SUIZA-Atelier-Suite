@@ -53,6 +53,21 @@ web prototype, rebuilt so it runs on macOS, Linux, and Windows.
 - True Bézier handles (currently polyline paths)
 - Opt-in AI features (background removal, super-resolution, content-aware fill)
 
+## Download (Alpha)
+
+Pre-built packages are published under
+[Releases](https://github.com/cdomin1/SUIZA-Atelier-Suite/releases):
+
+| Platform | Package |
+|---|---|
+| macOS (universal — Apple Silicon + Intel) | `SUIZA-Atelier-Suite-*-macOS-universal.dmg` |
+| Linux x86_64 | `SUIZA-Atelier-Suite-*-x86_64.AppImage` |
+| Windows x86_64 | `SUIZA-Atelier-Suite-*-Windows-x86_64.zip` |
+
+Alpha builds are unsigned/unnotarized — macOS: right-click → Open (or
+`xattr -dr com.apple.quarantine` on the app); Windows: SmartScreen →
+More info → Run anyway.
+
 ## Building & running
 
 Requires a stable Rust toolchain (`rustup`, 2021 edition) and platform-native
@@ -67,6 +82,19 @@ cargo run --release
 - **macOS**: builds with the Command Line Tools. If your CLT is older than the
   default SDK, pin `SDKROOT` to an installed SDK (the repo's local
   `.cargo/config.toml` demonstrates this; it is gitignored).
+
+### Packaging
+
+```bash
+scripts/bundle-macos.sh release [universal]   # dist/SUIZA Atelier Suite.app
+scripts/bundle-dmg.sh universal               # signed DMG (ad-hoc)
+scripts/bundle-linux.sh                       # dist/suiza-atelier-linux/
+scripts/bundle-appimage.sh                    # dist/*.AppImage (Linux, needs LINUXDEPLOY+APPIMAGETOOL)
+scripts/bundle-windows.sh                     # dist/*.zip (Windows)
+```
+
+Tagging `v*` runs `.github/workflows/release.yml`, which builds all three
+packages in CI and publishes a prerelease with `SHA256SUMS`.
 
 ## Document format
 

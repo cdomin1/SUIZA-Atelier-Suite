@@ -91,7 +91,14 @@ fn layers_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
             // visibility + lock
             let eye = if layer.visible { "●" } else { "○" };
             if ui
-                .selectable_label(false, RichText::new(eye).size(11.0).color(if layer.visible { hex32(theme.accent) } else { muted }))
+                .selectable_label(
+                    false,
+                    RichText::new(eye).size(11.0).color(if layer.visible {
+                        hex32(theme.accent)
+                    } else {
+                        muted
+                    }),
+                )
                 .on_hover_text("Toggle visibility")
                 .clicked()
             {
@@ -115,10 +122,7 @@ fn layers_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
                 LayerType::Group => "GRP",
             };
             let label = format!("{kind}  {}", layer.name);
-            let resp = ui.selectable_label(
-                selected,
-                RichText::new(label).size(11.0),
-            );
+            let resp = ui.selectable_label(selected, RichText::new(label).size(11.0));
             if resp.clicked() {
                 st.project.selected_layer_id = layer.id.clone();
             }
@@ -144,7 +148,10 @@ fn layers_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
             ui.indent("layer-ctl", |ui| {
                 let mut opacity = layer.opacity;
                 if ui
-                    .add_sized([160.0, 18.0], egui::Slider::new(&mut opacity, 0.0..=100.0).suffix("%"))
+                    .add_sized(
+                        [160.0, 18.0],
+                        egui::Slider::new(&mut opacity, 0.0..=100.0).suffix("%"),
+                    )
                     .changed()
                 {
                     st.set_layer_opacity(&layer.id, opacity);
@@ -161,10 +168,20 @@ fn layers_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
                     st.set_layer_blend_mode(&layer.id, mode);
                 }
                 ui.horizontal(|ui| {
-                    if ui.small_button("▲").on_hover_text("Bring Forward").clicked() && i + 1 < count {
+                    if ui
+                        .small_button("▲")
+                        .on_hover_text("Bring Forward")
+                        .clicked()
+                        && i + 1 < count
+                    {
                         st.move_layer(i, i + 1);
                     }
-                    if ui.small_button("▼").on_hover_text("Send Backward").clicked() && i > 0 {
+                    if ui
+                        .small_button("▼")
+                        .on_hover_text("Send Backward")
+                        .clicked()
+                        && i > 0
+                    {
                         st.move_layer(i, i - 1);
                     }
                 });
@@ -185,7 +202,11 @@ fn typography_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
         .unwrap_or(false);
 
     if !is_text {
-        ui.label(RichText::new("Select a text layer to edit typography.").size(11.0).color(muted));
+        ui.label(
+            RichText::new("Select a text layer to edit typography.")
+                .size(11.0)
+                .color(muted),
+        );
         return;
     }
 
@@ -204,7 +225,10 @@ fn typography_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
     }
 
     ui.label(RichText::new("Family").size(11.0).color(muted));
-    let mut fam = layer.text_font_family.clone().unwrap_or_else(|| "Plus Jakarta Sans".into());
+    let mut fam = layer
+        .text_font_family
+        .clone()
+        .unwrap_or_else(|| "Plus Jakarta Sans".into());
     if ui.add(egui::TextEdit::singleline(&mut fam)).changed() {
         layer.text_font_family = Some(fam);
         changed = true;
@@ -213,13 +237,27 @@ fn typography_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
     ui.horizontal(|ui| {
         ui.label(RichText::new("Size").size(11.0).color(muted));
         let mut size = layer.text_font_size.unwrap_or(32.0);
-        if ui.add(egui::DragValue::new(&mut size).range(1.0..=800.0).suffix("pt")).changed() {
+        if ui
+            .add(
+                egui::DragValue::new(&mut size)
+                    .range(1.0..=800.0)
+                    .suffix("pt"),
+            )
+            .changed()
+        {
             layer.text_font_size = Some(size);
             changed = true;
         }
         ui.label(RichText::new("Tracking").size(11.0).color(muted));
         let mut ls = layer.text_letter_spacing.unwrap_or(0.0);
-        if ui.add(egui::DragValue::new(&mut ls).range(-20.0..=100.0).speed(0.1)).changed() {
+        if ui
+            .add(
+                egui::DragValue::new(&mut ls)
+                    .range(-20.0..=100.0)
+                    .speed(0.1),
+            )
+            .changed()
+        {
             layer.text_letter_spacing = Some(ls);
             changed = true;
         }
@@ -227,7 +265,10 @@ fn typography_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
     ui.horizontal(|ui| {
         ui.label(RichText::new("Leading").size(11.0).color(muted));
         let mut lh = layer.text_line_height.unwrap_or(1.2);
-        if ui.add(egui::DragValue::new(&mut lh).range(0.5..=4.0).speed(0.01)).changed() {
+        if ui
+            .add(egui::DragValue::new(&mut lh).range(0.5..=4.0).speed(0.01))
+            .changed()
+        {
             layer.text_line_height = Some(lh);
             changed = true;
         }
@@ -284,8 +325,11 @@ fn swatches_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
     let muted = hex32(theme.text_muted);
 
     if !st.palettes.iter().any(|p| p.id == st.selected_palette_id) {
-        st.selected_palette_id =
-            st.palettes.first().map(|p| p.id.clone()).unwrap_or_default();
+        st.selected_palette_id = st
+            .palettes
+            .first()
+            .map(|p| p.id.clone())
+            .unwrap_or_default();
     }
 
     ui.horizontal(|ui| {
@@ -308,7 +352,11 @@ fn swatches_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
             .clicked()
         {
             let fg = st.foreground_color.clone();
-            if let Some(p) = st.palettes.iter_mut().find(|p| p.id == st.selected_palette_id) {
+            if let Some(p) = st
+                .palettes
+                .iter_mut()
+                .find(|p| p.id == st.selected_palette_id)
+            {
                 p.swatches.push(ColorSwatch {
                     id: new_id("sw"),
                     name: fg.clone(),
@@ -330,7 +378,11 @@ fn swatches_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
             .clicked()
         {
             let bg = st.background_color.clone();
-            if let Some(p) = st.palettes.iter_mut().find(|p| p.id == st.selected_palette_id) {
+            if let Some(p) = st
+                .palettes
+                .iter_mut()
+                .find(|p| p.id == st.selected_palette_id)
+            {
                 p.swatches.push(ColorSwatch {
                     id: new_id("sw"),
                     name: bg.clone(),
@@ -363,11 +415,13 @@ fn swatches_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
         let mut remove_id: Option<String> = None;
         ui.horizontal_wrapped(|ui| {
             for sw in &palette.swatches {
-                let color = if sw.is_none { Color32::TRANSPARENT } else { hex32(&sw.color) };
-                let (rect, resp) = ui.allocate_exact_size(
-                    egui::Vec2::new(26.0, 26.0),
-                    egui::Sense::click(),
-                );
+                let color = if sw.is_none {
+                    Color32::TRANSPARENT
+                } else {
+                    hex32(&sw.color)
+                };
+                let (rect, resp) =
+                    ui.allocate_exact_size(egui::Vec2::new(26.0, 26.0), egui::Sense::click());
                 ui.painter().rect_filled(rect, 3.0, color);
                 if sw.is_none {
                     ui.painter().line_segment(
@@ -386,7 +440,11 @@ fn swatches_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
                     sw.name
                 ));
                 if resp.clicked() {
-                    let target = if ui.input(|i| i.modifiers.alt) { "stroke" } else { "fill" };
+                    let target = if ui.input(|i| i.modifiers.alt) {
+                        "stroke"
+                    } else {
+                        "fill"
+                    };
                     st.apply_swatch(&sw.color, target);
                 }
                 if resp.secondary_clicked() {
@@ -395,7 +453,11 @@ fn swatches_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
             }
         });
         if let Some(rid) = remove_id {
-            if let Some(p) = st.palettes.iter_mut().find(|p| p.id == st.selected_palette_id) {
+            if let Some(p) = st
+                .palettes
+                .iter_mut()
+                .find(|p| p.id == st.selected_palette_id)
+            {
                 p.swatches.retain(|s| s.id != rid);
             }
             st.hint("Swatch removed");
@@ -403,7 +465,11 @@ fn swatches_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
     }
 
     ui.add_space(6.0);
-    ui.label(RichText::new("Click a swatch to apply · Alt+Click applies to stroke").size(10.0).color(muted));
+    ui.label(
+        RichText::new("Click a swatch to apply · Alt+Click applies to stroke")
+            .size(10.0)
+            .color(muted),
+    );
 }
 
 // ---- Adjustments ------------------------------------------------------------------
@@ -412,7 +478,11 @@ fn adjustments_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
     let theme = *theme_by_id(st.theme_id);
     let muted = hex32(theme.text_muted);
 
-    ui.label(RichText::new("Non-destructive adjustment layers").size(11.0).color(muted));
+    ui.label(
+        RichText::new("Non-destructive adjustment layers")
+            .size(11.0)
+            .color(muted),
+    );
     ui.add_space(4.0);
     ui.horizontal_wrapped(|ui| {
         for adj in AdjustmentType::ALL {
@@ -450,7 +520,11 @@ fn adjustments_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
             }
         }
     } else {
-        ui.label(RichText::new("Select an adjustment layer to tune its values.").size(11.0).color(muted));
+        ui.label(
+            RichText::new("Select an adjustment layer to tune its values.")
+                .size(11.0)
+                .color(muted),
+        );
     }
 }
 
@@ -471,14 +545,21 @@ fn properties_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
     ui.label(
         RichText::new(format!(
             "{} × {} px · {} dpi · {:?}",
-            st.project.width as u32, st.project.height as u32, st.project.dpi, st.project.color_mode
+            st.project.width as u32,
+            st.project.height as u32,
+            st.project.dpi,
+            st.project.color_mode
         ))
         .size(11.0)
         .color(muted),
     );
     ui.horizontal(|ui| {
         ui.label(RichText::new("Color mode").size(11.0).color(muted));
-        for (m, l) in [(ColorMode::Rgb, "RGB"), (ColorMode::Cmyk, "CMYK"), (ColorMode::Grayscale, "Gray")] {
+        for (m, l) in [
+            (ColorMode::Rgb, "RGB"),
+            (ColorMode::Cmyk, "CMYK"),
+            (ColorMode::Grayscale, "Gray"),
+        ] {
             if ui.selectable_label(st.project.color_mode == m, l).clicked() {
                 st.set_color_mode(m);
             }
@@ -488,7 +569,11 @@ fn properties_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
 
     if let Some(layer) = st.selected_layer().cloned() {
         ui.label(RichText::new("Selected Layer").strong());
-        ui.label(RichText::new(format!("{:?} · {}", layer.layer_type, layer.name)).size(11.0).color(muted));
+        ui.label(
+            RichText::new(format!("{:?} · {}", layer.layer_type, layer.name))
+                .size(11.0)
+                .color(muted),
+        );
         ui.horizontal(|ui| {
             ui.label(RichText::new("X").size(11.0).color(muted));
             let mut x = layer.x.unwrap_or(0.0);
@@ -519,9 +604,13 @@ fn properties_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
         {
             let sid = shape.id.clone();
             ui.label(
-                RichText::new(format!("{:?} · {}", shape.kind, shape.name.unwrap_or_else(|| sid.clone())))
-                    .size(11.0)
-                    .color(muted),
+                RichText::new(format!(
+                    "{:?} · {}",
+                    shape.kind,
+                    shape.name.unwrap_or_else(|| sid.clone())
+                ))
+                .size(11.0)
+                .color(muted),
             );
             ui.horizontal(|ui| {
                 for (label, field) in [("X", "x"), ("Y", "y"), ("W", "w"), ("H", "h")] {
@@ -597,7 +686,9 @@ fn properties_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
         {
             let fid = frame.id.clone();
             ui.label(
-                RichText::new(format!("{:?} frame", frame.kind)).size(11.0).color(muted),
+                RichText::new(format!("{:?} frame", frame.kind))
+                    .size(11.0)
+                    .color(muted),
             );
             ui.horizontal(|ui| {
                 for (label, v0) in [
@@ -632,7 +723,10 @@ fn properties_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
             if frame.kind == FrameKind::Text {
                 ui.label(RichText::new("Content").size(11.0).color(muted));
                 let mut c = frame.content.clone().unwrap_or_default();
-                if ui.add(egui::TextEdit::multiline(&mut c).desired_rows(3)).changed() {
+                if ui
+                    .add(egui::TextEdit::multiline(&mut c).desired_rows(3))
+                    .changed()
+                {
                     if let Some(f) = st.publish_frames.iter_mut().find(|f| f.id == fid) {
                         f.content = Some(c);
                     }
@@ -640,7 +734,10 @@ fn properties_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
                 ui.horizontal(|ui| {
                     ui.label(RichText::new("Size").size(11.0).color(muted));
                     let mut fs = frame.font_size.unwrap_or(14.0);
-                    if ui.add(egui::DragValue::new(&mut fs).range(1.0..=400.0)).changed() {
+                    if ui
+                        .add(egui::DragValue::new(&mut fs).range(1.0..=400.0))
+                        .changed()
+                    {
                         if let Some(f) = st.publish_frames.iter_mut().find(|f| f.id == fid) {
                             f.font_size = Some(fs);
                         }
@@ -701,15 +798,23 @@ fn ai_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
     ui.separator();
     if !st.ai_opt_in {
         ui.label(
-            RichText::new("AI features are off. Nothing leaves your machine — enable opt-in to use them.")
-                .size(11.0)
-                .color(muted),
+            RichText::new(
+                "AI features are off. Nothing leaves your machine — enable opt-in to use them.",
+            )
+            .size(11.0)
+            .color(muted),
         );
         return;
     }
     for (label, desc) in [
-        ("Smart Background Removal", "Isolate subject onto a non-destructive layer"),
-        ("Neural Super-Resolution 2×", "High-frequency texture synthesis upscale"),
+        (
+            "Smart Background Removal",
+            "Isolate subject onto a non-destructive layer",
+        ),
+        (
+            "Neural Super-Resolution 2×",
+            "High-frequency texture synthesis upscale",
+        ),
         ("Neural Super-Resolution 4×", "Maximum-detail enlargement"),
         ("Content-Aware Fill", "Procedural texture inpainting"),
         ("Generate Plugin Code", "Rust/WASM plugin scaffolding"),
@@ -748,15 +853,25 @@ fn stroke_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
     });
     ui.horizontal(|ui| {
         ui.label(RichText::new("Width").size(11.0).color(muted));
-        if ui.add(egui::Slider::new(&mut st.vector_stroke_width, 0.0..=48.0).suffix("px")).changed() {
+        if ui
+            .add(egui::Slider::new(&mut st.vector_stroke_width, 0.0..=48.0).suffix("px"))
+            .changed()
+        {
             let w = st.vector_stroke_width;
             st.update_selected_vector_shapes(|s| s.stroke_width = w);
         }
     });
     ui.horizontal(|ui| {
         ui.label(RichText::new("Style").size(11.0).color(muted));
-        for (v, l) in [(StrokeStyle::Solid, "Solid"), (StrokeStyle::Dashed, "Dashed"), (StrokeStyle::Dotted, "Dotted")] {
-            if ui.selectable_label(st.vector_stroke_style == v, l).clicked() {
+        for (v, l) in [
+            (StrokeStyle::Solid, "Solid"),
+            (StrokeStyle::Dashed, "Dashed"),
+            (StrokeStyle::Dotted, "Dotted"),
+        ] {
+            if ui
+                .selectable_label(st.vector_stroke_style == v, l)
+                .clicked()
+            {
                 st.vector_stroke_style = v;
                 st.update_selected_vector_shapes(|s| s.stroke_style = Some(v));
             }
@@ -764,7 +879,10 @@ fn stroke_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
     });
     ui.horizontal(|ui| {
         ui.label(RichText::new("Corner radius").size(11.0).color(muted));
-        if ui.add(egui::Slider::new(&mut st.vector_corner_radius, 0.0..=100.0).suffix("px")).changed() {
+        if ui
+            .add(egui::Slider::new(&mut st.vector_corner_radius, 0.0..=100.0).suffix("px"))
+            .changed()
+        {
             let r = st.vector_corner_radius;
             st.update_selected_vector_shapes(|s| s.corner_radius = Some(r));
         }
@@ -795,7 +913,11 @@ fn pathfinder_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
     let muted = hex32(theme.text_muted);
 
     ui.label(RichText::new("Boolean Path Operations").strong());
-    ui.label(RichText::new("Select 2+ shapes (or first two are used)").size(10.0).color(muted));
+    ui.label(
+        RichText::new("Select 2+ shapes (or first two are used)")
+            .size(10.0)
+            .color(muted),
+    );
     ui.add_space(4.0);
     ui.horizontal_wrapped(|ui| {
         for (op, l) in [
@@ -812,9 +934,13 @@ fn pathfinder_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
     });
     ui.separator();
     ui.label(
-        RichText::new(format!("{} shapes · {} selected", st.vector_shapes.len(), st.selected_shape_ids.len()))
-            .size(10.0)
-            .color(muted),
+        RichText::new(format!(
+            "{} shapes · {} selected",
+            st.vector_shapes.len(),
+            st.selected_shape_ids.len()
+        ))
+        .size(10.0)
+        .color(muted),
     );
 }
 
@@ -831,10 +957,15 @@ fn pages_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
         }
         if ui.button("- Page").clicked() && st.project.page_count > 1 {
             st.project.page_count -= 1;
-            st.project.active_page_index = st.project.active_page_index.min(st.project.page_count - 1);
+            st.project.active_page_index =
+                st.project.active_page_index.min(st.project.page_count - 1);
         }
     });
-    ui.label(RichText::new(format!("Master: {}", st.publish_master_page)).size(11.0).color(muted));
+    ui.label(
+        RichText::new(format!("Master: {}", st.publish_master_page))
+            .size(11.0)
+            .color(muted),
+    );
     ui.separator();
 
     for i in 0..st.project.page_count {
@@ -861,7 +992,10 @@ fn wrap_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
         (WrapMode::Contour, "Contour / shape wrap"),
         (WrapMode::Jump, "Jump object"),
     ] {
-        if ui.selectable_label(st.publish_text_wrap_mode == m, l).clicked() {
+        if ui
+            .selectable_label(st.publish_text_wrap_mode == m, l)
+            .clicked()
+        {
             st.publish_text_wrap_mode = m;
             for f in &mut st.publish_frames {
                 if st.selected_frame_ids.contains(&f.id) {
@@ -876,7 +1010,11 @@ fn wrap_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
     // Edit margins on all selected frames.
     let has_selection = !st.selected_frame_ids.is_empty();
     if !has_selection {
-        ui.label(RichText::new("Select a frame to edit its wrap margins.").size(10.0).color(muted));
+        ui.label(
+            RichText::new("Select a frame to edit its wrap margins.")
+                .size(10.0)
+                .color(muted),
+        );
         return;
     }
     let mut margin = st
@@ -923,15 +1061,40 @@ fn preflight_panel(ui: &mut egui::Ui, st: &mut AtelierState) {
     ui.add_space(4.0);
 
     let checks: Vec<(&str, bool, String)> = vec![
-        ("Resolution", st.project.dpi >= 300, format!("{} dpi (300+ required for offset)", st.project.dpi)),
-        ("Color mode", st.project.color_mode == ColorMode::Cmyk, format!("{:?} (CMYK required)", st.project.color_mode)),
-        ("Bleed", st.project.bleed >= 3.0, format!("{} mm bleed (3mm ISO)", st.project.bleed)),
-        ("Facing pages", st.project.facing_pages, "Spread layout configured".into()),
-        ("Text frames", !st.publish_frames.is_empty(), format!("{} frames on active page", st.publish_frames.len())),
+        (
+            "Resolution",
+            st.project.dpi >= 300,
+            format!("{} dpi (300+ required for offset)", st.project.dpi),
+        ),
+        (
+            "Color mode",
+            st.project.color_mode == ColorMode::Cmyk,
+            format!("{:?} (CMYK required)", st.project.color_mode),
+        ),
+        (
+            "Bleed",
+            st.project.bleed >= 3.0,
+            format!("{} mm bleed (3mm ISO)", st.project.bleed),
+        ),
+        (
+            "Facing pages",
+            st.project.facing_pages,
+            "Spread layout configured".into(),
+        ),
+        (
+            "Text frames",
+            !st.publish_frames.is_empty(),
+            format!("{} frames on active page", st.publish_frames.len()),
+        ),
     ];
     for (name, pass, detail) in checks {
         ui.horizontal(|ui| {
-            ui.label(RichText::new(if pass { "PASS" } else { "WARN" }).size(10.0).monospace().color(if pass { ok } else { warn }));
+            ui.label(
+                RichText::new(if pass { "PASS" } else { "WARN" })
+                    .size(10.0)
+                    .monospace()
+                    .color(if pass { ok } else { warn }),
+            );
             ui.vertical(|ui| {
                 ui.label(RichText::new(name).size(11.0));
                 ui.label(RichText::new(&detail).size(10.0).color(muted));
