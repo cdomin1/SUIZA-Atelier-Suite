@@ -86,8 +86,6 @@ so a document is a single portable file.
 
 ## Related projects
 
-- [`SUIZA-Suite`](https://github.com/cdomin1/SUIZA-Suite) — the original
-  React/TypeScript web prototype this was ported from
 - [`SUIZA-Canvas`](https://github.com/cdomin1/SUIZA-Canvas) — a separate
   Rust/egui vector design editor
 
